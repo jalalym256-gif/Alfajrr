@@ -1046,74 +1046,70 @@ function renderModels(index) {
             debouncedSave();
             updateSelectedModelTexts(index);
         });
-}
-
-    // === بخش مدل دامن ===
-    renderMultiSelectOptions('skirtOptions', AppConfig.SKIRT_MODELS, cust.models.skirt || [], (opt) => {
-        if (!cust.models.skirt) cust.models.skirt = [];
-        const foundIndex = cust.models.skirt.indexOf(opt);
-        if (foundIndex > -1) {
-            cust.models.skirt.splice(foundIndex, 1);
-            showNotification(`مدل دامن "${opt}" حذف شد`, "info");
-        } else {
-            cust.models.skirt.push(opt);
-            showNotification(`مدل دامن "${opt}" اضافه شد`, "success");
-        }
-        debouncedSave();
-        updateSelectedModelTexts(index);
-    });
-
-    // === بخش ویژگی‌ها ===
-    renderMultiSelectOptions('featuresOptions', AppConfig.FEATURES_LIST, cust.models.features || [], (opt) => {
-        if (!cust.models.features) cust.models.features = [];
-        const foundIndex = cust.models.features.indexOf(opt);
-        if (foundIndex > -1) {
-            cust.models.features.splice(foundIndex, 1);
-            showNotification(`ویژگی "${opt}" حذف شد`, "info");
-        } else {
-            cust.models.features.push(opt);
-            showNotification(`ویژگی "${opt}" اضافه شد`, "success");
-        }
-        debouncedSave();
-        updateSelectedModelTexts(index);
-    });
-}
-
-// تابع کمکی برای نمایش گزینه‌های چند انتخابی
-function renderMultiSelectOptions(containerId, options, selectedArray, onClick) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
     
-    container.innerHTML = "";
-    options.forEach(opt => {
-        const isSelected = Array.isArray(selectedArray) && selectedArray.includes(opt);
-        const div = document.createElement("div");
-        div.className = `multi-select-option ${isSelected ? 'selected' : ''}`;
-        div.innerHTML = `<span>${opt}</span><div class="checkmark"></div>`;
-        
-        div.onclick = () => {
-            onClick(opt);
-            div.classList.toggle('selected');
-        };
-        container.appendChild(div);
-    });
+    renderMultiSelectOptions('skirtOptions', AppConfig.SKIRT_MODELS, cust.models.skirt || [],
+        (opt, isSelected) => {
+            if (!cust.models.skirt) cust.models.skirt = [];
+            
+            if (isSelected) {
+                cust.models.skirt = cust.models.skirt.filter(item => item !== opt);
+                showNotification(`مدل دامن "${opt}" حذف شد`, "info");
+            } else {
+                cust.models.skirt.push(opt);
+                showNotification(`مدل دامن "${opt}" اضافه شد`, "success");
+            }
+            debouncedSave();
+            updateSelectedModelTexts(index);
+        });
+    
+    renderMultiSelectOptions('featuresOptions', AppConfig.FEATURES_LIST, cust.models.features || [],
+        (opt, isSelected) => {
+            if (!cust.models.features) cust.models.features = [];
+            
+            if (isSelected) {
+                cust.models.features = cust.models.features.filter(item => item !== opt);
+                showNotification(`ویژگی "${opt}" حذف شد`, "info");
+            } else {
+                cust.models.features.push(opt);
+                showNotification(`ویژگی "${opt}" اضافه شد`, "success");
+            }
+            debouncedSave();
+            updateSelectedModelTexts(index);
+        });
 }
 
-// تابع کمکی برای نمایش گزینه‌های تک انتخابی (یخن و آستین)
 function renderModelOptions(containerId, options, selectedValue, onClick) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
     container.innerHTML = "";
     options.forEach(opt => {
-        const isSelected = opt === selectedValue;
         const div = document.createElement("div");
-        div.className = `model-option ${isSelected ? 'selected' : ''}`;
+        div.className = "model-option" + (selectedValue === opt ? " selected" : "");
         div.textContent = opt;
-        div.onclick = () => {
+        div.onclick = () => { 
             onClick(opt);
-            // بستن لیست بعد از انتخاب
             container.style.display = "none";
+        };
+        container.appendChild(div);
+    });
+}
+
+function renderMultiSelectOptions(containerId, options, selectedArray, onClick) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = "";
+    options.forEach(opt => {
+        const isSelected = selectedArray && selectedArray.includes(opt);
+        const div = document.createElement("div");
+        div.className = `multi-select-option ${isSelected ? 'selected' : ''}`;
+        div.innerHTML = `
+            <span>${opt}</span>
+            <div class="checkmark"></div>
+        `;
+        div.onclick = () => {
+            onClick(opt, isSelected);
         };
         container.appendChild(div);
     });
