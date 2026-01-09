@@ -1047,25 +1047,31 @@ function renderModels(index) {
             updateSelectedModelTexts(index);
         });
     
-        // مدل دامن (چند انتخابی)
-    renderMultiSelectOptions('skirtOptions', AppConfig.SKIRT_MODELS, cust.models.skirt || [], (opt) => {
-        if (!cust.models.skirt) cust.models.skirt = [];
-        
-        const foundIndex = cust.models.skirt.indexOf(opt);
-        if (foundIndex > -1) {
-            // اگر قبلاً بود، حذفش کن
-            cust.models.skirt.splice(foundIndex, 1);
-            showNotification(`مدل دامن "${opt}" حذف شد`, "info");
-        } else {
-            // اگر نبود، اضافه‌اش کن
-            cust.models.skirt.push(opt);
-            showNotification(`مدل دامن "${opt}" اضافه شد`, "success");
-        }
-        
-        debouncedSave();
-        updateSelectedModelTexts(index);
-        renderModels(index); // این خط باعث می‌شود تیکِ گزینه‌ها بلافاصله تغییر کند
-    });
+        // === بخش مدل دامن (اصلاح شده برای رفع مشکل حذف/اضافه) ===
+renderMultiSelectOptions('skirtOptions', AppConfig.SKIRT_MODELS, cust.models.skirt || [], (opt) => {
+    // ۱. اطمینان از اینکه آرایه وجود دارد
+    if (!cust.models.skirt) cust.models.skirt = [];
+    
+    // ۲. بررسی مستقیم وجود گزینه در آرایه (بدون تکیه بر پارامتر دوم)
+    const indexInArray = cust.models.skirt.indexOf(opt);
+    
+    if (indexInArray > -1) {
+        // اگر در آرایه هست، پس کاربر می‌خواهد حذفش کند
+        cust.models.skirt.splice(indexInArray, 1);
+        showNotification(`مدل "${opt}" حذف شد`, "info");
+    } else {
+        // اگر در آرایه نیست، اضافه‌اش کن
+        cust.models.skirt.push(opt);
+        showNotification(`مدل "${opt}" اضافه شد`, "success");
+    }
+    
+    // ۳. ذخیره و آپدیت کردن متن‌ها
+    debouncedSave();
+    updateSelectedModelTexts(index);
+    
+    // ۴. حیاتی: بازخوانی رندر برای تغییر رنگ دکمه‌ها در لحظه
+    renderModels(index);
+});
 
     renderMultiSelectOptions('featuresOptions', AppConfig.FEATURES_LIST, cust.models.features || [],
         (opt, isSelected) => {
