@@ -1051,13 +1051,14 @@ function renderModels(index) {
         (opt, isSelected) => {
             if (!cust.models.skirt) cust.models.skirt = [];
             
-            if (isSelected) {
-                cust.models.skirt = cust.models.skirt.filter(item => item !== opt);
-                showNotification(`مدل دامن "${opt}" حذف شد`, "info");
-            } else {
-                cust.models.skirt.push(opt);
-                showNotification(`مدل دامن "${opt}" اضافه شد`, "success");
-            }
+                if (isSelected) {
+        cust.models.skirt = cust.models.skirt.filter(item => item !== opt);
+        showNotification(`مدل دامن "${opt}" حذف شد`, "info");
+    } else {
+        cust.models.skirt.push(opt);
+        showNotification(`مدل دامن "${opt}" اضافه شد`, "success");
+    }
+
             debouncedSave();
             updateSelectedModelTexts(index);
         });
@@ -1066,13 +1067,14 @@ function renderModels(index) {
         (opt, isSelected) => {
             if (!cust.models.features) cust.models.features = [];
             
-            if (isSelected) {
-                cust.models.features = cust.models.features.filter(item => item !== opt);
-                showNotification(`ویژگی "${opt}" حذف شد`, "info");
-            } else {
-                cust.models.features.push(opt);
-                showNotification(`ویژگی "${opt}" اضافه شد`, "success");
-            }
+                if (isSelected) {
+        cust.models.features = cust.models.features.filter(item => item !== opt);
+        showNotification(`ویژگی "${opt}" حذف شد`, "info");
+    } else {
+        cust.models.features.push(opt);
+        showNotification(`ویژگی "${opt}" اضافه شد`, "success");
+    }
+
             debouncedSave();
             updateSelectedModelTexts(index);
         });
