@@ -1046,8 +1046,9 @@ function renderModels(index) {
             debouncedSave();
             updateSelectedModelTexts(index);
         });
+}
 
-        // === بخش مدل دامن ===
+    // === بخش مدل دامن ===
     renderMultiSelectOptions('skirtOptions', AppConfig.SKIRT_MODELS, cust.models.skirt || [], (opt) => {
         if (!cust.models.skirt) cust.models.skirt = [];
         const foundIndex = cust.models.skirt.indexOf(opt);
@@ -1078,46 +1079,41 @@ function renderModels(index) {
     });
 }
 
+// تابع کمکی برای نمایش گزینه‌های چند انتخابی
 function renderMultiSelectOptions(containerId, options, selectedArray, onClick) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
     container.innerHTML = "";
     options.forEach(opt => {
-        // بررسی اینکه آیا گزینه در لیست انتخاب شده‌ها هست یا نه
         const isSelected = Array.isArray(selectedArray) && selectedArray.includes(opt);
-        
         const div = document.createElement("div");
         div.className = `multi-select-option ${isSelected ? 'selected' : ''}`;
-        div.innerHTML = `
-            <span>${opt}</span>
-            <div class="checkmark"></div>
-        `;
+        div.innerHTML = `<span>${opt}</span><div class="checkmark"></div>`;
         
         div.onclick = () => {
             onClick(opt);
-            // تغییر وضعیت ظاهری بلافاصله بعد از کلیک
             div.classList.toggle('selected');
         };
         container.appendChild(div);
     });
 }
 
-function renderMultiSelectOptions(containerId, options, selectedArray, onClick) {
+// تابع کمکی برای نمایش گزینه‌های تک انتخابی (یخن و آستین)
+function renderModelOptions(containerId, options, selectedValue, onClick) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
     container.innerHTML = "";
     options.forEach(opt => {
-        const isSelected = selectedArray && selectedArray.includes(opt);
+        const isSelected = opt === selectedValue;
         const div = document.createElement("div");
-        div.className = `multi-select-option ${isSelected ? 'selected' : ''}`;
-        div.innerHTML = `
-            <span>${opt}</span>
-            <div class="checkmark"></div>
-        `;
+        div.className = `model-option ${isSelected ? 'selected' : ''}`;
+        div.textContent = opt;
         div.onclick = () => {
-            onClick(opt, isSelected);
+            onClick(opt);
+            // بستن لیست بعد از انتخاب
+            container.style.display = "none";
         };
         container.appendChild(div);
     });
