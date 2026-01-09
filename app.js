@@ -1047,21 +1047,26 @@ function renderModels(index) {
             updateSelectedModelTexts(index);
         });
     
-    renderMultiSelectOptions('skirtOptions', AppConfig.SKIRT_MODELS, cust.models.skirt || [],
-        (opt, isSelected) => {
-            if (!cust.models.skirt) cust.models.skirt = [];
-            
-            if (isSelected) {
-                cust.models.skirt = cust.models.skirt.filter(item => item !== opt);
-                showNotification(`مدل دامن "${opt}" حذف شد`, "info");
-            } else {
-                cust.models.skirt.push(opt);
-                showNotification(`مدل دامن "${opt}" اضافه شد`, "success");
-            }
-            debouncedSave();
-            updateSelectedModelTexts(index);
-        });
-    
+        // مدل دامن (چند انتخابی)
+    renderMultiSelectOptions('skirtOptions', AppConfig.SKIRT_MODELS, cust.models.skirt || [], (opt) => {
+        if (!cust.models.skirt) cust.models.skirt = [];
+        
+        const foundIndex = cust.models.skirt.indexOf(opt);
+        if (foundIndex > -1) {
+            // اگر قبلاً بود، حذفش کن
+            cust.models.skirt.splice(foundIndex, 1);
+            showNotification(`مدل دامن "${opt}" حذف شد`, "info");
+        } else {
+            // اگر نبود، اضافه‌اش کن
+            cust.models.skirt.push(opt);
+            showNotification(`مدل دامن "${opt}" اضافه شد`, "success");
+        }
+        
+        debouncedSave();
+        updateSelectedModelTexts(index);
+        renderModels(index); // این خط باعث می‌شود تیکِ گزینه‌ها بلافاصله تغییر کند
+    });
+
     renderMultiSelectOptions('featuresOptions', AppConfig.FEATURES_LIST, cust.models.features || [],
         (opt, isSelected) => {
             if (!cust.models.features) cust.models.features = [];
