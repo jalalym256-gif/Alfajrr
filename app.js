@@ -1046,7 +1046,6 @@ function renderModels(index) {
             debouncedSave();
             updateSelectedModelTexts(index);
         });
-}
 
     // === بخش مدل دامن ===
     renderMultiSelectOptions('skirtOptions', AppConfig.SKIRT_MODELS, cust.models.skirt || [], (opt) => {
