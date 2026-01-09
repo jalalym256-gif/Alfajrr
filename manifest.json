@@ -2,7 +2,7 @@
   "name": "ALFAJR - سیستم خیاطی",
   "short_name": "ALFAJR",
   "description": "اپلیکیشن مدیریت مشتریان و سفارشات خیاطی ALFAJR",
-  "start_url": "/",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#D4AF37",
