@@ -1046,34 +1046,47 @@ function renderModels(index) {
             debouncedSave();
             updateSelectedModelTexts(index);
         });
-    
-    renderMultiSelectOptions('skirtOptions', AppConfig.SKIRT_MODELS, cust.models.skirt || [],
-        (opt, isSelected) => {
-            if (!cust.models.skirt) cust.models.skirt = [];
             
-                if (isSelected) {
-        cust.models.skirt = cust.models.skirt.filter(item => item !== opt);
+                renderMultiSelectOptions('skirtOptions', AppConfig.SKIRT_MODELS, cust.models.skirt || [], (opt) => {
+    if (!cust.models.skirt) cust.models.skirt = [];
+    
+    const foundIndex = cust.models.skirt.indexOf(opt);
+    if (foundIndex > -1) {
+        // اگر در لیست بود -> حذفش کن
+        cust.models.skirt.splice(foundIndex, 1);
         showNotification(`مدل دامن "${opt}" حذف شد`, "info");
     } else {
+        // اگر در لیست نبود -> اضافه‌اش کن
         cust.models.skirt.push(opt);
         showNotification(`مدل دامن "${opt}" اضافه شد`, "success");
     }
+    
+    debouncedSave();
+    updateSelectedModelTexts(index);
+});
+
 
             debouncedSave();
             updateSelectedModelTexts(index);
         });
     
-    renderMultiSelectOptions('featuresOptions', AppConfig.FEATURES_LIST, cust.models.features || [],
-        (opt, isSelected) => {
-            if (!cust.models.features) cust.models.features = [];
-            
-                if (isSelected) {
-        cust.models.features = cust.models.features.filter(item => item !== opt);
+    renderMultiSelectOptions('featuresOptions', AppConfig.FEATURES_LIST, cust.models.features || [], (opt) => {
+    if (!cust.models.features) cust.models.features = [];
+    
+    const foundIndex = cust.models.features.indexOf(opt);
+    if (foundIndex > -1) {
+        // اگر بود -> حذف کن
+        cust.models.features.splice(foundIndex, 1);
         showNotification(`ویژگی "${opt}" حذف شد`, "info");
     } else {
+        // اگر نبود -> اضافه کن
         cust.models.features.push(opt);
         showNotification(`ویژگی "${opt}" اضافه شد`, "success");
     }
+    
+    debouncedSave();
+    updateSelectedModelTexts(index);
+});
 
             debouncedSave();
             updateSelectedModelTexts(index);
