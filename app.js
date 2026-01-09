@@ -1093,22 +1093,31 @@ function renderModels(index) {
         });
 }
 
-function renderModelOptions(containerId, options, selectedValue, onClick) {
+function renderMultiSelectOptions(containerId, options, selectedArray, onClick) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
     container.innerHTML = "";
     options.forEach(opt => {
+        // بررسی اینکه آیا گزینه در لیست انتخاب شده‌ها هست یا نه
+        const isSelected = Array.isArray(selectedArray) && selectedArray.includes(opt);
+        
         const div = document.createElement("div");
-        div.className = "model-option" + (selectedValue === opt ? " selected" : "");
-        div.textContent = opt;
-        div.onclick = () => { 
+        div.className = `multi-select-option ${isSelected ? 'selected' : ''}`;
+        div.innerHTML = `
+            <span>${opt}</span>
+            <div class="checkmark"></div>
+        `;
+        
+        div.onclick = () => {
             onClick(opt);
-            container.style.display = "none";
+            // تغییر وضعیت ظاهری بلافاصله بعد از کلیک
+            div.classList.toggle('selected');
         };
         container.appendChild(div);
     });
 }
+
 
 function renderMultiSelectOptions(containerId, options, selectedArray, onClick) {
     const container = document.getElementById(containerId);
