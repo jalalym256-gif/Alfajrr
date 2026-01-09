@@ -794,176 +794,8 @@ function updateNotes(val) {
 }
 
 // ========== MEASUREMENTS TABLE ==========
-function renderMeasurements(index) {
-    if (index < 0 || index >= customers.length) return;
-    
-    const customer = customers[index];
-    const container = document.getElementById("measurementsTable");
-    if (!container) return;
-    
-    // اطمینان از وجود measurements
-    if (!customer.measurements) {
-        const tempCustomer = new Customer(customer.name, customer.phone);
-        customer.measurements = tempCustomer.measurements;
-    }
-    
-    container.innerHTML = `
-        <h4><i class="fas fa-ruler-combined"></i> اندازه‌گیری‌ها:</h4>
-        <table>
-            <thead>
-                <tr>
-                    <th>اندازه</th>
-                    <th>مقدار</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- قد -->
-                <tr>
-                    <td style="font-weight:bold;color:var(--royal-gold);">قد</td>
-                    <td>
-                        <div class="field-input" 
-                             contenteditable="true" 
-                             data-field="قد"
-                             oninput="updateMeasurement('قد', this.innerText.trim())">
-                            ${customer.measurements.قد || ''}
-                        </div>
-                    </td>
-                </tr>
-                
-                <!-- شانه (دو فیلد بدون عنوان) -->
-                <tr>
-                    <td style="font-weight:bold;color:var(--royal-gold);">شانه</td>
-                    <td>
-                        <div class="horizontal-fields">
-                            <div class="field-item">
-                                <div class="field-input" 
-                                     contenteditable="true" 
-                                     data-field="شانه_یک"
-                                     oninput="updateMeasurement('شانه_یک', this.innerText.trim())">
-                                    ${customer.measurements.شانه_یک || ''}
-                                </div>
-                            </div>
-                            <div class="field-item">
-                                <div class="field-input" 
-                                     contenteditable="true" 
-                                     data-field="شانه_دو"
-                                     oninput="updateMeasurement('شانه_دو', this.innerText.trim())">
-                                    ${customer.measurements.شانه_دو || ''}
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                
-                <!-- آستین (سه فیلد بدون عنوان) -->
-                <tr>
-                    <td style="font-weight:bold;color:var(--royal-gold);">آستین</td>
-                    <td>
-                        <div class="horizontal-fields">
-                            <div class="field-item">
-                                <div class="field-input" 
-                                     contenteditable="true" 
-                                     data-field="آستین_یک"
-                                     oninput="updateMeasurement('آستین_یک', this.innerText.trim())">
-                                    ${customer.measurements.آستین_یک || ''}
-                                </div>
-                            </div>
-                            <div class="field-item">
-                                <div class="field-input" 
-                                     contenteditable="true" 
-                                     data-field="آستین_دو"
-                                     oninput="updateMeasurement('آستین_دو', this.innerText.trim())">
-                                    ${customer.measurements.آستین_دو || ''}
-                                </div>
-                            </div>
-                            <div class="field-item">
-                                <div class="field-input" 
-                                     contenteditable="true" 
-                                     data-field="آستین_سه"
-                                     oninput="updateMeasurement('آستین_سه', this.innerText.trim())">
-                                    ${customer.measurements.آستین_سه || ''}
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                
-                <!-- بقیه فیلدها -->
-                ${AppConfig.MEASUREMENT_FIELDS.slice(6).map((field, i) => {
-                    if (field === 'بر_تمبان' || field === 'خشتک') return '';
-                    
-                    return `
-                    <tr>
-                        <td style="font-weight:bold;color:var(--royal-gold);">${getFieldLabel(field)}</td>
-                        <td>
-                            <div class="field-input" 
-                                 contenteditable="true" 
-                                 data-field="${field}"
-                                 oninput="updateMeasurement('${field}', this.innerText.trim())">
-                                ${customer.measurements[field] || ''}
-                            </div>
-                        </td>
-                    </tr>
-                    `;
-                }).join('')}
-                
-                <!-- بر تهمان و خشتک (دو فیلد با اختصار) -->
-                <tr>
-                    <td style="font-weight:bold;color:var(--royal-gold);">خشتک</td>
-                    <td>
-                        <div class="horizontal-fields">
-                            <div class="field-item">
-                                <span class="field-label">ب</span>
-                                <div class="field-input" 
-                                     contenteditable="true" 
-                                     data-field="بر_تمبان"
-                                     oninput="updateMeasurement('بر_تمبان', this.innerText.trim())">
-                                    ${customer.measurements.بر_تمبان || ''}
-                                </div>
-                            </div>
-                            <div class="field-item">
-                                <span class="field-label">خ</span>
-                                <div class="field-input" 
-                                     contenteditable="true" 
-                                     data-field="خشتک"
-                                     oninput="updateMeasurement('خشتک', this.innerText.trim())">
-                                    ${customer.measurements.خشتک || ''}
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                
-                <!-- سفارش (تعداد سفارش + مقدار تکه در یک ردیف) -->
-                <tr>
-                    <td style="font-weight:bold;color:var(--royal-gold);">سفارش</td>
-                    <td>
-                        <div class="horizontal-fields">
-                            <div class="field-item">
-                                <span class="field-label">تعداد</span>
-                                <div class="field-input" 
-                                     contenteditable="true" 
-                                     data-field="تعداد_سفارش"
-                                     oninput="updateMeasurement('تعداد_سفارش', this.innerText.trim())">
-                                    ${customer.measurements.تعداد_سفارش || ''}
-                                </div>
-                            </div>
-                            <div class="field-item">
-                                <span class="field-label">مقدار تکه</span>
-                                <div class="field-input" 
-                                     contenteditable="true" 
-                                     data-field="مقدار_تکه"
-                                     oninput="updateMeasurement('مقدار_تکه', this.innerText.trim())">
-                                    ${customer.measurements.مقدار_تکه || ''}
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    `;
-}
+
+                        <
 
 function getFieldLabel(field) {
     const labels = {
@@ -1002,6 +834,181 @@ function updateMeasurement(field, val) {
 }
 
 // ========== MODELS MANAGEMENT ==========
+function renderMeasurements(index) {
+    if (index < 0 || index >= customers.length) return;
+    
+    const customer = customers[index];
+    const container = document.getElementById("measurementsTable");
+    if (!container) return;
+    
+    if (!customer.measurements) {
+        const tempCustomer = new Customer(customer.name, customer.phone);
+        customer.measurements = tempCustomer.measurements;
+    }
+    
+    container.innerHTML = `
+        <h4><i class="fas fa-ruler-combined"></i> اندازه‌گیری‌ها:</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>اندازه</th>
+                    <th>مقدار</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-weight:bold;color:var(--royal-gold);">قد</td>
+                    <td>
+                        <div class="field-input" 
+                             contenteditable="true" 
+                             inputmode="decimal"
+                             data-field="قد"
+                             oninput="updateMeasurement('قد', this.innerText.trim())">
+                            ${customer.measurements.قد || ''}
+                        </div>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td style="font-weight:bold;color:var(--royal-gold);">شانه</td>
+                    <td>
+                        <div class="horizontal-fields">
+                            <div class="field-item">
+                                <div class="field-input" 
+                                     contenteditable="true" 
+                                     inputmode="decimal"
+                                     data-field="شانه_یک"
+                                     oninput="updateMeasurement('شانه_یک', this.innerText.trim())">
+                                    ${customer.measurements.شانه_یک || ''}
+                                </div>
+                            </div>
+                            <div class="field-item">
+                                <div class="field-input" 
+                                     contenteditable="true" 
+                                     inputmode="decimal"
+                                     data-field="شانه_دو"
+                                     oninput="updateMeasurement('شانه_دو', this.innerText.trim())">
+                                    ${customer.measurements.شانه_دو || ''}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td style="font-weight:bold;color:var(--royal-gold);">آستین</td>
+                    <td>
+                        <div class="horizontal-fields">
+                            <div class="field-item">
+                                <div class="field-input" 
+                                     contenteditable="true" 
+                                     inputmode="decimal"
+                                     data-field="آستین_یک"
+                                     oninput="updateMeasurement('آستین_یک', this.innerText.trim())">
+                                    ${customer.measurements.آستین_یک || ''}
+                                </div>
+                            </div>
+                            <div class="field-item">
+                                <div class="field-input" 
+                                     contenteditable="true" 
+                                     inputmode="decimal"
+                                     data-field="آستین_دو"
+                                     oninput="updateMeasurement('آستین_دو', this.innerText.trim())">
+                                    ${customer.measurements.آستین_دو || ''}
+                                </div>
+                            </div>
+                            <div class="field-item">
+                                <div class="field-input" 
+                                     contenteditable="true" 
+                                     inputmode="decimal"
+                                     data-field="آستین_سه"
+                                     oninput="updateMeasurement('آستین_سه', this.innerText.trim())">
+                                    ${customer.measurements.آستین_سه || ''}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                
+                ${AppConfig.MEASUREMENT_FIELDS.slice(6).map((field, i) => {
+                    if (field === 'بر_تمبان' || field === 'خشتک') return '';
+                    
+                    return `
+                    <tr>
+                        <td style="font-weight:bold;color:var(--royal-gold);">${getFieldLabel(field)}</td>
+                        <td>
+                            <div class="field-input" 
+                                 contenteditable="true" 
+                                 inputmode="decimal"
+                                 data-field="${field}"
+                                 oninput="updateMeasurement('${field}', this.innerText.trim())">
+                                ${customer.measurements[field] || ''}
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+                }).join('')}
+                
+                <tr>
+                    <td style="font-weight:bold;color:var(--royal-gold);">خشتک</td>
+                    <td>
+                        <div class="horizontal-fields">
+                            <div class="field-item">
+                                <span class="field-label">ب</span>
+                                <div class="field-input" 
+                                     contenteditable="true" 
+                                     inputmode="decimal"
+                                     data-field="بر_تمبان"
+                                     oninput="updateMeasurement('بر_تمبان', this.innerText.trim())">
+                                    ${customer.measurements.بر_تمبان || ''}
+                                </div>
+                            </div>
+                            <div class="field-item">
+                                <span class="field-label">خ</span>
+                                <div class="field-input" 
+                                     contenteditable="true" 
+                                     inputmode="decimal"
+                                     data-field="خشتک"
+                                     oninput="updateMeasurement('خشتک', this.innerText.trim())">
+                                    ${customer.measurements.خشتک || ''}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td style="font-weight:bold;color:var(--royal-gold);">سفارش</td>
+                    <td>
+                        <div class="horizontal-fields">
+                            <div class="field-item">
+                                <span class="field-label">تعداد</span>
+                                <div class="field-input" 
+                                     contenteditable="true" 
+                                     inputmode="decimal"
+                                     data-field="تعداد_سفارش"
+                                     oninput="updateMeasurement('تعداد_سفارش', this.innerText.trim())">
+                                    ${customer.measurements.تعداد_سفارش || ''}
+                                </div>
+                            </div>
+                            <div class="field-item">
+                                <span class="field-label">مقدار تکه</span>
+                                <div class="field-input" 
+                                     contenteditable="true" 
+                                     inputmode="decimal"
+                                     data-field="مقدار_تکه"
+                                     oninput="updateMeasurement('مقدار_تکه', this.innerText.trim())">
+                                    ${customer.measurements.مقدار_تکه || ''}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    `;
+}
+
 function toggleOptions(optionId) {
     const allOptions = document.querySelectorAll('.model-options');
     allOptions.forEach(option => {
