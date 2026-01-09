@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#D4AF37">
+    <meta name="description" content="اپلیکیشن مدیریت مشتریان و سفارشات خیاطی ALFAJR">
+    
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="Css/style.css">
+    
+    <title>ALFAJR - سیستم خیاطی</title>
+    
+    <style>
+        /* Basic styles for immediate display */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #C0C0C0;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .logo {
+            text-align: center;
+            color: #D4AF37;
+            margin: 20px 0;
+            font-size: 2.5rem;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 20px;
+            color: white;
+            z-index: 10000;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #D4AF37;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        button {
+            background: rgba(212, 175, 55, 0.15);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            color: #D4AF37;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: rgba(212, 175, 55, 0.25);
+            transform: translateY(-2px);
+        }
+        
+        input[type="text"] {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #C0C0C0;
+            padding: 10px;
+            border-radius: 8px;
+            width: 300px;
+            margin: 0 8px;
+        }
+        
+        .search-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .customer-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .customer-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .customer-item:hover {
+            transform: translateY(-2px);
+            background: rgba(212, 175, 55, 0.1);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 10000;
+            display: none;
+        }
+        
+        .notification.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .db-status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .db-status.connected {
+            background: rgba(40, 167, 69, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div id="loadingText">در حال راه‌اندازی دیتابیس...</div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Database Status -->
+    <div id="dbStatus" class="db-status">
+        <i class="fas fa-database"></i>
+        <span>در حال اتصال...</span>
+    </div>
+
+    <div class="container">
+        <!-- Settings Menu -->
+        <div class="settings-menu">
+            <button class="settings-btn" onclick="toggleSettings()" aria-label="تنظیمات">
+                <i class="fas fa-cog"></i>
+            </button>
+            <div class="settings-dropdown" id="settingsDropdown" style="display: none;">
+                <button onclick="saveDataToFile()"><i class="fas fa-save"></i> ذخیره به فایل</button>
+                <button onclick="document.getElementById('fileInput').click()"><i class="fas fa-folder-open"></i> بارگذاری از فایل</button>
+                <button onclick="toggleDarkMode()"><i class="fas fa-moon"></i> حالت تاریک</button>
+                <button onclick="toggleLightMode()"><i class="fas fa-sun"></i> حالت روشن</button>
+                <button onclick="toggleVividMode()"><i class="fas fa-palette"></i> حالت ویوید</button>
+                <button onclick="optimizeDatabase()"><i class="fas fa-broom"></i> بهینه‌سازی دیتابیس</button>
+                <button onclick="clearAllData()" class="delete-btn"><i class="fas fa-trash"></i> پاک‌سازی همه داده‌ها</button>
+            </div>
+        </div>
+
+        <!-- File Input (Hidden) -->
+        <input type="file" id="fileInput" accept=".json" style="display:none;">
+
+        <!-- Main Header -->
+        <h1 class="logo">
+            <i class="fas fa-tshirt"></i>
+            ALFAJR PRO
+        </h1>
+
+        <!-- Home Page -->
+        <div class="home" id="homePage">
+            <!-- Stats Bar -->
+            <div class="stats-bar" id="statsBar">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalCustomers">0</div>
+                    <div class="stat-label">کل مشتریان</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="dbSize">0KB</div>
+                    <div class="stat-label">حجم دیتابیس</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="activeOrders">0</div>
+                    <div class="stat-label">سفارشات فعال</div>
+                </div>
+            </div>
+
+            <!-- Search Box -->
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="جستجوی مشتری بر اساس نام یا شماره" 
+                       onkeypress="if(event.key === 'Enter') searchCustomer()">
+                <button onclick="searchCustomer()"><i class="fas fa-search"></i> جستجو</button>
+                <button onclick="addCustomer()"><i class="fas fa-user-plus"></i> مشتری جدید</button>
+                <button onclick="advancedSearch()"><i class="fas fa-filter"></i> جستجوی پیشرفته</button>
+            </div>
+
+            <!-- Customer List -->
+            <div class="customer-list" id="customerList">
+                <!-- مشتریان اینجا نمایش داده می‌شوند -->
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div class="profile" id="profilePage" style="display: none;">
+            <button onclick="backHome()"><i class="fas fa-arrow-right"></i> بازگشت</button>
+            
+            <div class="profile-header">
+                <h2 id="profileName">نام مشتری</h2>
+                <h3 id="profilePhone">شماره تماس</h3>
+            </div>
+
+            <!-- Customer Notes -->
+            <div class="notes-section">
+                <h4><i class="fas fa-sticky-note"></i> توضیحات مشتری:</h4>
+                <textarea id="customerNotes" placeholder="توضیحات مربوط به مشتری را اینجا وارد کنید..."></textarea>
+            </div>
+
+            <!-- Measurements Table -->
+            <div id="measurementsTable"></div>
+
+            <!-- Models Section -->
+            <div class="model-section">
+                <div>
+                    <div class="model-title" onclick="toggleOptions('yakhunOptions')">
+                        <span id="yakhunSelectedText">مدل یخن: انتخاب نشده</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="model-options" id="yakhunOptions" style="display: none;"></div>
+                </div>
+                
+                <div>
+                    <div class="model-title" onclick="toggleOptions('sleeveOptions')">
+                        <span id="sleeveSelectedText">مدل آستین: انتخاب نشده</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="model-options" id="sleeveOptions" style="display: none;"></div>
+                </div>
+                
+                <div>
+                    <div class="model-title" onclick="toggleOptions('skirtOptions')">
+                        <span id="skirtSelectedText">مدل دامن: انتخاب نشده</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="model-options" id="skirtOptions" style="display: none;"></div>
+                </div>
+                
+                <div>
+                    <div class="model-title" onclick="toggleOptions('featuresOptions')">
+                        <span id="featuresSelectedText">ویژگی‌ها: انتخاب نشده</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="model-options" id="featuresOptions" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Price and Delivery Section -->
+            <div id="priceDeliverySection" class="price-delivery-section">
+                <!-- اینجا بخش قیمت و تحویل لود می‌شود -->
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button onclick="saveCustomerToDB()"><i class="fas fa-save"></i> ذخیره تغییرات</button>
+                <button onclick="printLabels(currentIndex)"><i class="fas fa-print"></i> چاپ لیبل‌ها</button>
+                <button onclick="addOrder(currentIndex)"><i class="fas fa-plus"></i> سفارش جدید</button>
+                <button class="delete-btn" onclick="deleteCustomer(currentIndex)"><i class="fas fa-trash"></i> حذف مشتری</button>
+            </div>
+
+            <!-- Orders History -->
+            <h4><i class="fas fa-history"></i> تاریخچه سفارش‌ها:</h4>
+            <div id="ordersHistory"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/app.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker ثبت شد:', registration.scope);
+                        document.getElementById('dbStatus').innerHTML = '<i class="fas fa-database"></i> <span>متصل (آفلاین)</span>';
+                        document.getElementById('dbStatus').className = 'db-status connected';
+                    })
+                    .catch(error => {
+                        console.log('❌ خطا در ثبت Service Worker:', error);
+                    });
+            });
+        }
+        
+        // Basic notification function
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            setTimeout(() => {
+                notification.className = 'notification';
+            }, 3000);
+        }
+        
+        // Toggle settings dropdown
+        function toggleSettings() {
+            const dropdown = document.getElementById('settingsDropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (event) => {
+            const settingsMenu = document.querySelector('.settings-menu');
+            const dropdown = document.getElementById('settingsDropdown');
+            if (settingsMenu && !settingsMenu.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+        
+        // Show loading
+        function showLoading(message = 'در حال بارگذاری...') {
+            const overlay = document.getElementById('loadingOverlay');
+            const text = document.getElementById('loadingText');
+            if (overlay && text) {
+                text.textContent = message;
+                overlay.style.display = 'flex';
+            }
+        }
+        
+        // Hide loading
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+        
+        // Initial loading
+        window.addEventListener('load', () => {
+            showLoading('در حال راه‌اندازی اپلیکیشن...');
+            setTimeout(() => {
+                hideLoading();
+                showNotification('اپلیکیشن ALFAJR آماده است', 'success');
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
