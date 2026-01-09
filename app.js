@@ -1,8 +1,7 @@
-// ========== ALFAJR - سیستم مدیریت خیاطی ==========
 // ========== CONFIGURATION ==========
 const AppConfig = {
     DATABASE_NAME: 'ALFAJR_DB',
-    DATABASE_VERSION: 4,
+    DATABASE_VERSION: 4, // نسخه را افزایش دادیم
     STORES: {
         CUSTOMERS: 'customers',
         SETTINGS: 'settings',
@@ -34,7 +33,10 @@ const AppConfig = {
 let customers = [];
 let currentIndex = null;
 let isDarkMode = true;
+let isVividMode = false;
+let currentFieldIndex = 0;
 let db = null;
+let isDBInitialized = false;
 
 // ========== CUSTOMER CLASS ==========
 class Customer {
@@ -62,6 +64,7 @@ class Customer {
     }
 
     generateRandomFourDigitId() {
+        // اطمینان از منحصر به فرد بودن ID
         const timestamp = Date.now().toString().slice(-4);
         const random = Math.floor(Math.random() * 9000) + 1000;
         return (timestamp + random).toString().slice(-8);
@@ -78,12 +81,14 @@ class Customer {
     static fromObject(obj) {
         const customer = new Customer(obj.name, obj.phone);
         
+        // کپی کردن تمام خصوصیات از آبجکت ورودی
         for (const key in obj) {
             if (obj.hasOwnProperty(key)) {
                 customer[key] = obj[key];
             }
         }
         
+        // اطمینان از وجود آرایه‌های ضروری
         if (!customer.orders) customer.orders = [];
         if (!customer.measurements) customer.measurements = customer.initMeasurements();
         if (!customer.models) {
@@ -110,75 +115,117 @@ class DatabaseManager {
 
     async init() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(AppConfig.DATABASE_NAME, AppConfig.DATABASE_VERSION);
-            
-            request.onerror = (event) => {
-                console.error("خطا در باز کردن دیتابیس:", event.target.error);
-                reject(event.target.error);
-            };
-            
-            request.onsuccess = (event) => {
-                this.db = event.target.result;
-                this.isInitialized = true;
-                console.log("دیتابیس باز شد");
-                resolve(this.db);
-            };
-            
-            request.onupgradeneeded = (event) => {
-                const db = event.target.result;
+            try {
+                const request = indexedDB.open(AppConfig.DATABASE_NAME, AppConfig.DATABASE_VERSION);
                 
-                if (!db.objectStoreNames.contains(AppConfig.STORES.CUSTOMERS)) {
-                    const customerStore = db.createObjectStore(AppConfig.STORES.CUSTOMERS, { 
-                        keyPath: 'id'
-                    });
-                    customerStore.createIndex('name', 'name', { unique: false });
-                    customerStore.createIndex('phone', 'phone', { unique: false });
-                    customerStore.createIndex('createdAt', 'createdAt', { unique: false });
-                    customerStore.createIndex('deleted', 'deleted', { unique: false });
-                }
+                request.onerror = (event) => {
+                    console.error("خطا در باز کردن دیتابیس:", event.target.error);
+                    reject(event.target.error);
+                    updateDBStatus(false);
+                };
                 
-                if (!db.objectStoreNames.contains(AppConfig.STORES.SETTINGS)) {
-                    db.createObjectStore(AppConfig.STORES.SETTINGS, { 
-                        keyPath: 'key'
-                    });
-                }
+                request.onsuccess = (event) => {
+                    this.db = event.target.result;
+                    this.isInitialized = true;
+                    console.log("دیتابیس با موفقیت باز شد");
+                    
+                    this.db.onerror = (event) => {
+                        console.error("خطای دیتابیس:", event.target.error);
+                        showNotification("خطا در عملیات دیتابیس", "error");
+                    };
+                    
+                    // اضافه کردن هندلر برای بسته شدن
+                    this.db.onclose = () => {
+                        console.log("دیتابیس بسته شد");
+                        this.isInitialized = false;
+                    };
+                    
+                    updateDBStatus(true);
+                    resolve(this.db);
+                };
                 
-                if (!db.objectStoreNames.contains(AppConfig.STORES.BACKUPS)) {
-                    db.createObjectStore(AppConfig.STORES.BACKUPS, { 
-                        keyPath: 'id',
-                        autoIncrement: true 
-                    });
-                }
-            };
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    console.log(`آپگرید دیتابیس از نسخه ${event.oldVersion} به ${event.newVersion}`);
+                    
+                    if (!db.objectStoreNames.contains(AppConfig.STORES.CUSTOMERS)) {
+                        const customerStore = db.createObjectStore(AppConfig.STORES.CUSTOMERS, { 
+                            keyPath: 'id',
+                            autoIncrement: false 
+                        });
+                        customerStore.createIndex('name', 'name', { unique: false });
+                        customerStore.createIndex('phone', 'phone', { unique: false });
+                        customerStore.createIndex('createdAt', 'createdAt', { unique: false });
+                        customerStore.createIndex('deleted', 'deleted', { unique: false });
+                        customerStore.createIndex('yakhun', 'models.yakhun', { unique: false });
+                        customerStore.createIndex('deliveryDay', 'deliveryDay', { unique: false });
+                    }
+                    
+                    if (!db.objectStoreNames.contains(AppConfig.STORES.SETTINGS)) {
+                        db.createObjectStore(AppConfig.STORES.SETTINGS, { 
+                            keyPath: 'key'
+                        });
+                    }
+                    
+                    if (!db.objectStoreNames.contains(AppConfig.STORES.BACKUPS)) {
+                        db.createObjectStore(AppConfig.STORES.BACKUPS, { 
+                            keyPath: 'id',
+                            autoIncrement: true 
+                        });
+                    }
+                    
+                    console.log("دیتابیس آپگرید شد");
+                };
+                
+                request.onblocked = () => {
+                    showNotification("دیتابیس توسط تب دیگری قفل شده است", "warning");
+                };
+                
+            } catch (error) {
+                console.error("خطا در راه‌اندازی دیتابیس:", error);
+                reject(error);
+            }
         });
     }
 
+    // متد جدید: دریافت یک مشتری بر اساس ID
     async getCustomer(id) {
         return new Promise((resolve, reject) => {
-            if (!this.isInitialized) {
-                reject("دیتابیس راه‌اندازی نشده");
+            if (!this.isInitialized || !this.db) {
+                reject("دیتابیس راه‌اندازی نشده است");
                 return;
             }
             
             const transaction = this.db.transaction([AppConfig.STORES.CUSTOMERS], 'readonly');
             const store = transaction.objectStore(AppConfig.STORES.CUSTOMERS);
+            
             const request = store.get(id);
             
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = (event) => reject(event.target.error);
+            request.onsuccess = () => {
+                resolve(request.result);
+            };
+            
+            request.onerror = (event) => {
+                reject(event.target.error);
+            };
         });
     }
 
     async saveCustomer(customer) {
         return new Promise((resolve, reject) => {
-            if (!this.isInitialized) {
-                reject("دیتابیس راه‌اندازی نشده");
+            if (!this.isInitialized || !this.db) {
+                reject("دیتابیس راه‌اندازی نشده است");
                 return;
             }
             
+            const transaction = this.db.transaction([AppConfig.STORES.CUSTOMERS], 'readwrite');
+            const store = transaction.objectStore(AppConfig.STORES.CUSTOMERS);
+            
+            // اطمینان از وجود تمام فیلدهای ضروری
             customer.updatedAt = new Date().toISOString();
             customer.version = (customer.version || 0) + 1;
             
+            // اطمینان از ساختار صحیح
             if (!customer.measurements) {
                 const tempCustomer = new Customer(customer.name, customer.phone);
                 customer.measurements = tempCustomer.measurements;
@@ -193,25 +240,31 @@ class DatabaseManager {
                 };
             }
             
-            const transaction = this.db.transaction([AppConfig.STORES.CUSTOMERS], 'readwrite');
-            const store = transaction.objectStore(AppConfig.STORES.CUSTOMERS);
             const request = store.put(customer);
             
-            request.onsuccess = () => resolve(customer);
-            request.onerror = (event) => reject(event.target.error);
+            request.onsuccess = () => {
+                resolve(customer);
+            };
+            
+            request.onerror = (event) => {
+                console.error("خطا در ذخیره مشتری:", event.target.error);
+                reject(event.target.error);
+            };
         });
     }
 
     async getAllCustomers(includeDeleted = false) {
         return new Promise((resolve, reject) => {
-            if (!this.isInitialized) {
-                reject("دیتابیس راه‌اندازی نشده");
+            if (!this.isInitialized || !this.db) {
+                reject("دیتابیس راه‌اندازی نشده است");
                 return;
             }
             
             const transaction = this.db.transaction([AppConfig.STORES.CUSTOMERS], 'readonly');
             const store = transaction.objectStore(AppConfig.STORES.CUSTOMERS);
-            const request = store.getAll();
+            const index = store.index('createdAt');
+            
+            const request = index.getAll();
             
             request.onsuccess = () => {
                 let customers = request.result;
@@ -219,6 +272,7 @@ class DatabaseManager {
                     customers = customers.filter(c => !c.deleted);
                 }
                 
+                // اطمینان از ساختار صحیح مشتریان
                 customers = customers.map(c => {
                     if (!c.models) {
                         c.models = {
@@ -235,53 +289,74 @@ class DatabaseManager {
                         c.measurements = tempCustomer.measurements;
                     }
                     if (!c.orders) c.orders = [];
+                    
                     return c;
                 });
                 
                 resolve(customers);
             };
             
-            request.onerror = (event) => reject(event.target.error);
+            request.onerror = (event) => {
+                reject(event.target.error);
+            };
         });
     }
 
     async searchCustomers(query, field = 'name') {
         return new Promise((resolve, reject) => {
-            if (!this.isInitialized) {
-                reject("دیتابیس راه‌اندازی نشده");
+            if (!this.isInitialized || !this.db) {
+                reject("دیتابیس راه‌اندازی نشده است");
                 return;
             }
             
             const transaction = this.db.transaction([AppConfig.STORES.CUSTOMERS], 'readonly');
             const store = transaction.objectStore(AppConfig.STORES.CUSTOMERS);
-            const request = store.getAll();
             
-            request.onsuccess = () => {
-                const allCustomers = request.result;
-                const results = allCustomers.filter(customer => {
-                    if (customer.deleted) return false;
-                    
-                    if (field === 'name' || field === 'phone') {
-                        return customer[field] && 
-                               customer[field].toLowerCase().includes(query.toLowerCase());
+            let index;
+            try {
+                index = store.index(field);
+            } catch (e) {
+                // اگر ایندکس وجود نداشت، جستجوی سراسری انجام بده
+                this.getAllCustomers().then(allCustomers => {
+                    const results = allCustomers.filter(customer => {
+                        return Object.values(customer).some(value => 
+                            value && typeof value === 'string' && 
+                            value.toLowerCase().includes(query.toLowerCase())
+                        );
+                    });
+                    resolve(results);
+                }).catch(reject);
+                return;
+            }
+            
+            const request = index.openCursor();
+            const results = [];
+            
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    const customer = cursor.value;
+                    if (customer[field] && 
+                        customer[field].toLowerCase().includes(query.toLowerCase()) &&
+                        !customer.deleted) {
+                        results.push(customer);
                     }
-                    
-                    return Object.values(customer).some(value => 
-                        value && typeof value === 'string' && 
-                        value.toLowerCase().includes(query.toLowerCase())
-                    );
-                });
-                resolve(results);
+                    cursor.continue();
+                } else {
+                    resolve(results);
+                }
             };
             
-            request.onerror = (event) => reject(event.target.error);
+            request.onerror = (event) => {
+                reject(event.target.error);
+            };
         });
     }
 
     async deleteCustomer(id) {
         return new Promise((resolve, reject) => {
-            if (!this.isInitialized) {
-                reject("دیتابیس راه‌اندازی نشده");
+            if (!this.isInitialized || !this.db) {
+                reject("دیتابیس راه‌اندازی نشده است");
                 return;
             }
             
@@ -298,42 +373,79 @@ class DatabaseManager {
                     
                     const putRequest = store.put(customer);
                     
-                    putRequest.onsuccess = () => resolve(true);
-                    putRequest.onerror = (event) => reject(event.target.error);
+                    putRequest.onsuccess = () => {
+                        resolve(true);
+                    };
+                    
+                    putRequest.onerror = (event) => {
+                        reject(event.target.error);
+                    };
                 } else {
                     reject("مشتری یافت نشد");
                 }
             };
             
-            getRequest.onerror = (event) => reject(event.target.error);
+            getRequest.onerror = (event) => {
+                reject(event.target.error);
+            };
+        });
+    }
+
+    async getDatabaseSize() {
+        return new Promise((resolve, reject) => {
+            if (!this.isInitialized || !this.db) {
+                reject("دیتابیس راه‌اندازی نشده است");
+                return;
+            }
+            
+            const transaction = this.db.transaction([AppConfig.STORES.CUSTOMERS], 'readonly');
+            const store = transaction.objectStore(AppConfig.STORES.CUSTOMERS);
+            const request = store.getAll();
+            
+            request.onsuccess = () => {
+                const data = JSON.stringify(request.result);
+                const sizeInBytes = new Blob([data]).size;
+                resolve(sizeInBytes);
+            };
+            
+            request.onerror = (event) => {
+                reject(event.target.error);
+            };
         });
     }
 
     async getSettings(key) {
         return new Promise((resolve, reject) => {
-            if (!this.isInitialized) {
-                reject("دیتابیس راه‌اندازی نشده");
+            if (!this.isInitialized || !this.db) {
+                reject("دیتابیس راه‌اندازی نشده است");
                 return;
             }
             
             const transaction = this.db.transaction([AppConfig.STORES.SETTINGS], 'readonly');
             const store = transaction.objectStore(AppConfig.STORES.SETTINGS);
+            
             const request = store.get(key);
             
-            request.onsuccess = () => resolve(request.result ? request.result.value : null);
-            request.onerror = (event) => reject(event.target.error);
+            request.onsuccess = () => {
+                resolve(request.result ? request.result.value : null);
+            };
+            
+            request.onerror = (event) => {
+                reject(event.target.error);
+            };
         });
     }
 
     async saveSettings(key, value) {
         return new Promise((resolve, reject) => {
-            if (!this.isInitialized) {
-                reject("دیتابیس راه‌اندازی نشده");
+            if (!this.isInitialized || !this.db) {
+                reject("دیتابیس راه‌اندازی نشده است");
                 return;
             }
             
             const transaction = this.db.transaction([AppConfig.STORES.SETTINGS], 'readwrite');
             const store = transaction.objectStore(AppConfig.STORES.SETTINGS);
+            
             const request = store.put({ key, value, updatedAt: new Date().toISOString() });
             
             request.onsuccess = () => resolve();
@@ -343,17 +455,23 @@ class DatabaseManager {
 
     async clearAllData() {
         return new Promise((resolve, reject) => {
-            if (!this.isInitialized) {
-                reject("دیتابیس راه‌اندازی نشده");
+            if (!this.isInitialized || !this.db) {
+                reject("دیتابیس راه‌اندازی نشده است");
                 return;
             }
             
             const transaction = this.db.transaction([AppConfig.STORES.CUSTOMERS], 'readwrite');
             const store = transaction.objectStore(AppConfig.STORES.CUSTOMERS);
+            
             const request = store.clear();
             
-            request.onsuccess = () => resolve();
-            request.onerror = (event) => reject(event.target.error);
+            request.onsuccess = () => {
+                resolve();
+            };
+            
+            request.onerror = (event) => {
+                reject(event.target.error);
+            };
         });
     }
 
@@ -361,6 +479,7 @@ class DatabaseManager {
         if (this.db) {
             this.db.close();
             this.isInitialized = false;
+            updateDBStatus(false);
         }
     }
 }
@@ -383,7 +502,20 @@ function showNotification(message, type = "info", duration = 3000) {
     }, duration);
 }
 
-function showLoading(message = "در حال بارگذاری...") {
+function updateDBStatus(connected) {
+    const statusEl = document.getElementById("dbStatus");
+    if (!statusEl) return;
+    
+    if (connected) {
+        statusEl.className = "db-status connected";
+        statusEl.innerHTML = `<i class="fas fa-database"></i> <span>متصل</span>`;
+    } else {
+        statusEl.className = "db-status disconnected";
+        statusEl.innerHTML = `<i class="fas fa-database"></i> <span>قطع ارتباط</span>`;
+    }
+}
+
+function showLoading(message = "در حال راه‌اندازی...") {
     const overlay = document.getElementById("loadingOverlay");
     const text = document.getElementById("loadingText");
     if (overlay && text) {
@@ -420,13 +552,14 @@ function debounce(func, wait) {
     };
 }
 
+// ایجاد یک نمونه debounced برای ذخیره
 const debouncedSave = debounce(async () => {
     if (currentIndex !== null && currentIndex < customers.length) {
         try {
             await dbManager.saveCustomer(customers[currentIndex]);
-            console.log("ذخیره خودکار");
+            console.log("ذخیره خودکار انجام شد");
         } catch (error) {
-            console.error("خطا در ذخیره:", error);
+            console.error("خطا در ذخیره خودکار:", error);
         }
     }
 }, 2000);
@@ -449,11 +582,12 @@ async function addCustomer() {
         const newCustomer = new Customer(name.trim(), phone.trim());
         await dbManager.saveCustomer(newCustomer);
         
-        showNotification(`مشتری "${name}" اضافه شد`, "success");
+        showNotification(`مشتری "${name}" با موفقیت اضافه شد`, "success");
         await loadCustomersFromDB();
         renderCustomerList();
         updateStats();
         
+        // باز کردن پروفایل مشتری جدید
         const index = customers.findIndex(c => c.id === newCustomer.id);
         if (index !== -1) {
             openProfile(index);
@@ -480,7 +614,7 @@ async function loadCustomersFromDB() {
 
 async function saveCustomerToDB() {
     if (currentIndex === null || currentIndex >= customers.length) {
-        showNotification("مشتری انتخاب نشده", "warning");
+        showNotification("مشتری انتخاب نشده است", "warning");
         return;
     }
     
@@ -491,7 +625,7 @@ async function saveCustomerToDB() {
         updateStats();
     } catch (error) {
         console.error("خطا در ذخیره مشتری:", error);
-        showNotification("خطا در ذخیره", "error");
+        showNotification("خطا در ذخیره اطلاعات", "error");
     }
 }
 
@@ -501,16 +635,16 @@ async function deleteCustomer(index) {
     const customer = customers[index];
     const customerName = customer.name;
     
-    if (!confirm(`حذف مشتری "${customerName}"؟`)) return;
+    if (!confirm(`آیا از حذف مشتری "${customerName}" مطمئن هستید؟ این مشتری به سطل زباله منتقل می‌شود.`)) return;
     
     try {
         await dbManager.deleteCustomer(customer.id);
-        showNotification(`مشتری "${customerName}" حذف شد`, "success");
+        showNotification(`مشتری "${customerName}" به سطل زباله منتقل شد`, "success");
         await loadCustomersFromDB();
         backHome();
     } catch (error) {
         console.error("خطا در حذف مشتری:", error);
-        showNotification("خطا در حذف", "error");
+        showNotification("خطا در حذف مشتری", "error");
     }
 }
 
@@ -529,6 +663,16 @@ async function searchCustomer() {
             results = await dbManager.searchCustomers(term, 'phone');
         }
         
+        if (results.length === 0) {
+            const allCustomers = await dbManager.getAllCustomers();
+            results = allCustomers.filter(customer => {
+                return Object.values(customer).some(value => 
+                    value && typeof value === 'string' && 
+                    value.toLowerCase().includes(term.toLowerCase())
+                );
+            });
+        }
+        
         renderSearchResults(results, term);
     } catch (error) {
         console.error("خطا در جستجو:", error);
@@ -545,7 +689,7 @@ function renderSearchResults(results, term) {
             <div class="empty-state">
                 <i class="fas fa-search"></i>
                 <h3>مشتری یافت نشد</h3>
-                <p>"${term}"</p>
+                <p>هیچ مشتری با مشخصات "${term}" پیدا نشد</p>
             </div>
         `;
         return;
@@ -559,11 +703,11 @@ function renderSearchResults(results, term) {
             <div>
                 <span class="customer-number">${customer.id ? customer.id.substring(0, 4) : '----'}</span>
                 <strong>${customer.name || 'بدون نام'}</strong> - ${customer.phone || 'بدون شماره'}
-                ${customer.notes ? '<br><small>' + 
+                ${customer.notes ? '<br><small style="color:var(--royal-silver);">' + 
                   (customer.notes.length > 50 ? customer.notes.substring(0, 50) + '...' : customer.notes) + '</small>' : ''}
             </div>
             <button onclick="openProfileFromSearch('${customer.id}')">
-                <i class="fas fa-user-circle"></i> مشاهده
+                <i class="fas fa-user-circle"></i> مشاهده پروفایل
             </button>
         `;
         list.appendChild(div);
@@ -580,13 +724,17 @@ async function openProfileFromSearch(customerId) {
             return;
         }
         
+        // تبدیل به شیء Customer
         const customerObj = Customer.fromObject(customer);
-        const index = customers.findIndex(c => c.id === customerId);
         
+        // بررسی وجود مشتری در آرایه
+        const index = customers.findIndex(c => c.id === customerId);
         if (index !== -1) {
+            // به‌روزرسانی مشتری موجود
             customers[index] = customerObj;
             currentIndex = index;
         } else {
+            // اضافه کردن مشتری جدید
             customers.push(customerObj);
             currentIndex = customers.length - 1;
         }
@@ -620,6 +768,15 @@ function openProfile(index) {
     
     document.getElementById("homePage").style.display = "none";
     document.getElementById("profilePage").style.display = "block";
+    
+    currentFieldIndex = 0;
+    
+    setTimeout(() => {
+        const firstInput = document.querySelector('.field-input[contenteditable="true"]');
+        if (firstInput) {
+            firstInput.focus();
+        }
+    }, 100);
 }
 
 function backHome() {
@@ -644,6 +801,7 @@ function renderMeasurements(index) {
     const container = document.getElementById("measurementsTable");
     if (!container) return;
     
+    // اطمینان از وجود measurements
     if (!customer.measurements) {
         const tempCustomer = new Customer(customer.name, customer.phone);
         customer.measurements = tempCustomer.measurements;
@@ -659,8 +817,9 @@ function renderMeasurements(index) {
                 </tr>
             </thead>
             <tbody>
+                <!-- قد -->
                 <tr>
-                    <td style="font-weight:bold;">قد</td>
+                    <td style="font-weight:bold;color:var(--royal-gold);">قد</td>
                     <td>
                         <div class="field-input" 
                              contenteditable="true" 
@@ -671,8 +830,9 @@ function renderMeasurements(index) {
                     </td>
                 </tr>
                 
+                <!-- شانه (دو فیلد بدون عنوان) -->
                 <tr>
-                    <td style="font-weight:bold;">شانه</td>
+                    <td style="font-weight:bold;color:var(--royal-gold);">شانه</td>
                     <td>
                         <div class="horizontal-fields">
                             <div class="field-item">
@@ -695,8 +855,9 @@ function renderMeasurements(index) {
                     </td>
                 </tr>
                 
+                <!-- آستین (سه فیلد بدون عنوان) -->
                 <tr>
-                    <td style="font-weight:bold;">آستین</td>
+                    <td style="font-weight:bold;color:var(--royal-gold);">آستین</td>
                     <td>
                         <div class="horizontal-fields">
                             <div class="field-item">
@@ -727,22 +888,28 @@ function renderMeasurements(index) {
                     </td>
                 </tr>
                 
-                ${['بغل', 'دامن', 'گردن', 'دور_سینه', 'شلوار', 'دم_پاچه', 'چاک_پتی'].map(field => `
-                <tr>
-                    <td style="font-weight:bold;">${getFieldLabel(field)}</td>
-                    <td>
-                        <div class="field-input" 
-                             contenteditable="true" 
-                             data-field="${field}"
-                             oninput="updateMeasurement('${field}', this.innerText.trim())">
-                            ${customer.measurements[field] || ''}
-                        </div>
-                    </td>
-                </tr>
-                `).join('')}
+                <!-- بقیه فیلدها -->
+                ${AppConfig.MEASUREMENT_FIELDS.slice(6).map((field, i) => {
+                    if (field === 'بر_تمبان' || field === 'خشتک') return '';
+                    
+                    return `
+                    <tr>
+                        <td style="font-weight:bold;color:var(--royal-gold);">${getFieldLabel(field)}</td>
+                        <td>
+                            <div class="field-input" 
+                                 contenteditable="true" 
+                                 data-field="${field}"
+                                 oninput="updateMeasurement('${field}', this.innerText.trim())">
+                                ${customer.measurements[field] || ''}
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+                }).join('')}
                 
+                <!-- بر تهمان و خشتک (دو فیلد با اختصار) -->
                 <tr>
-                    <td style="font-weight:bold;">خشتک</td>
+                    <td style="font-weight:bold;color:var(--royal-gold);">خشتک</td>
                     <td>
                         <div class="horizontal-fields">
                             <div class="field-item">
@@ -767,8 +934,9 @@ function renderMeasurements(index) {
                     </td>
                 </tr>
                 
+                <!-- سفارش (تعداد سفارش + مقدار تکه در یک ردیف) -->
                 <tr>
-                    <td style="font-weight:bold;">سفارش</td>
+                    <td style="font-weight:bold;color:var(--royal-gold);">سفارش</td>
                     <td>
                         <div class="horizontal-fields">
                             <div class="field-item">
@@ -799,13 +967,23 @@ function renderMeasurements(index) {
 
 function getFieldLabel(field) {
     const labels = {
+        "قد": "قد",
+        "شانه_یک": "شانه",
+        "شانه_دو": "شانه",
+        "آستین_یک": "آستین",
+        "آستین_دو": "آستین",
+        "آستین_سه": "آستین",
         "بغل": "بغل",
         "دامن": "دامن",
         "گردن": "گردن",
         "دور_سینه": "دور سینه",
         "شلوار": "شلوار",
         "دم_پاچه": "دم پاچه",
-        "چاک_پتی": "چاک پتی"
+        "بر_تمبان": "بر تهمان",
+        "خشتک": "خشتک",
+        "چاک_پتی": "چاک پتی",
+        "تعداد_سفارش": "تعداد سفارش",
+        "مقدار_تکه": "مقدار تکه"
     };
     
     return labels[field] || field;
@@ -814,6 +992,7 @@ function getFieldLabel(field) {
 function updateMeasurement(field, val) {
     if (currentIndex === null || currentIndex >= customers.length) return;
     
+    // اطمینان از وجود measurements
     if (!customers[currentIndex].measurements) {
         customers[currentIndex].measurements = {};
     }
@@ -842,6 +1021,7 @@ function renderModels(index) {
     
     const cust = customers[index];
     
+    // اطمینان از وجود models
     if (!cust.models) {
         cust.models = {
             yakhun: "",
@@ -851,97 +1031,92 @@ function renderModels(index) {
         };
     }
     
-    // یخن
-    const yakhunContainer = document.getElementById('yakhunOptions');
-    if (yakhunContainer) {
-        yakhunContainer.innerHTML = '';
-        AppConfig.YAKHUN_MODELS.forEach(opt => {
-            const div = document.createElement('div');
-            div.className = `model-option ${opt === cust.models.yakhun ? 'selected' : ''}`;
-            div.textContent = opt;
-            div.onclick = () => {
-                cust.models.yakhun = opt;
-                showNotification(`مدل یخن: ${opt}`, "success");
-                debouncedSave();
-                updateSelectedModelTexts(index);
-                yakhunContainer.style.display = 'none';
-            };
-            yakhunContainer.appendChild(div);
+    renderModelOptions('yakhunOptions', AppConfig.YAKHUN_MODELS, cust.models.yakhun, 
+        (opt) => {
+            cust.models.yakhun = opt;
+            showNotification(`مدل یخن به "${opt}" تغییر کرد`, "success");
+            debouncedSave();
+            updateSelectedModelTexts(index);
         });
-    }
     
-    // آستین
-    const sleeveContainer = document.getElementById('sleeveOptions');
-    if (sleeveContainer) {
-        sleeveContainer.innerHTML = '';
-        AppConfig.SLEEVE_MODELS.forEach(opt => {
-            const div = document.createElement('div');
-            div.className = `model-option ${opt === cust.models.sleeve ? 'selected' : ''}`;
-            div.textContent = opt;
-            div.onclick = () => {
-                cust.models.sleeve = opt;
-                showNotification(`مدل آستین: ${opt}`, "success");
-                debouncedSave();
-                updateSelectedModelTexts(index);
-                sleeveContainer.style.display = 'none';
-            };
-            sleeveContainer.appendChild(div);
+    renderModelOptions('sleeveOptions', AppConfig.SLEEVE_MODELS, cust.models.sleeve,
+        (opt) => {
+            cust.models.sleeve = opt;
+            showNotification(`مدل آستین به "${opt}" تغییر کرد`, "success");
+            debouncedSave();
+            updateSelectedModelTexts(index);
         });
-    }
+}
+
+    // === بخش مدل دامن ===
+    renderMultiSelectOptions('skirtOptions', AppConfig.SKIRT_MODELS, cust.models.skirt || [], (opt) => {
+        if (!cust.models.skirt) cust.models.skirt = [];
+        const foundIndex = cust.models.skirt.indexOf(opt);
+        if (foundIndex > -1) {
+            cust.models.skirt.splice(foundIndex, 1);
+            showNotification(`مدل دامن "${opt}" حذف شد`, "info");
+        } else {
+            cust.models.skirt.push(opt);
+            showNotification(`مدل دامن "${opt}" اضافه شد`, "success");
+        }
+        debouncedSave();
+        updateSelectedModelTexts(index);
+    });
+
+    // === بخش ویژگی‌ها ===
+    renderMultiSelectOptions('featuresOptions', AppConfig.FEATURES_LIST, cust.models.features || [], (opt) => {
+        if (!cust.models.features) cust.models.features = [];
+        const foundIndex = cust.models.features.indexOf(opt);
+        if (foundIndex > -1) {
+            cust.models.features.splice(foundIndex, 1);
+            showNotification(`ویژگی "${opt}" حذف شد`, "info");
+        } else {
+            cust.models.features.push(opt);
+            showNotification(`ویژگی "${opt}" اضافه شد`, "success");
+        }
+        debouncedSave();
+        updateSelectedModelTexts(index);
+    });
+}
+
+// تابع کمکی برای نمایش گزینه‌های چند انتخابی
+function renderMultiSelectOptions(containerId, options, selectedArray, onClick) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
     
-    // دامن
-    const skirtContainer = document.getElementById('skirtOptions');
-    if (skirtContainer) {
-        skirtContainer.innerHTML = '';
-        AppConfig.SKIRT_MODELS.forEach(opt => {
-            const isSelected = cust.models.skirt && cust.models.skirt.includes(opt);
-            const div = document.createElement('div');
-            div.className = `multi-select-option ${isSelected ? 'selected' : ''}`;
-            div.innerHTML = `<span>${opt}</span><div class="checkmark"></div>`;
-            div.onclick = () => {
-                if (!cust.models.skirt) cust.models.skirt = [];
-                const foundIndex = cust.models.skirt.indexOf(opt);
-                if (foundIndex > -1) {
-                    cust.models.skirt.splice(foundIndex, 1);
-                    showNotification(`حذف دامن: ${opt}`, "info");
-                } else {
-                    cust.models.skirt.push(opt);
-                    showNotification(`افزودن دامن: ${opt}`, "success");
-                }
-                debouncedSave();
-                updateSelectedModelTexts(index);
-                div.classList.toggle('selected');
-            };
-            skirtContainer.appendChild(div);
-        });
-    }
+    container.innerHTML = "";
+    options.forEach(opt => {
+        const isSelected = Array.isArray(selectedArray) && selectedArray.includes(opt);
+        const div = document.createElement("div");
+        div.className = `multi-select-option ${isSelected ? 'selected' : ''}`;
+        div.innerHTML = `<span>${opt}</span><div class="checkmark"></div>`;
+        
+        div.onclick = () => {
+            onClick(opt);
+            div.classList.toggle('selected');
+        };
+        container.appendChild(div);
+    });
+}
+
+// تابع کمکی برای نمایش گزینه‌های تک انتخابی (یخن و آستین)
+function renderModelOptions(containerId, options, selectedValue, onClick) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
     
-    // ویژگی‌ها
-    const featuresContainer = document.getElementById('featuresOptions');
-    if (featuresContainer) {
-        featuresContainer.innerHTML = '';
-        AppConfig.FEATURES_LIST.forEach(opt => {
-            const isSelected = cust.models.features && cust.models.features.includes(opt);
-            const div = document.createElement('div');
-            div.className = `multi-select-option ${isSelected ? 'selected' : ''}`;
-            div.innerHTML = `<span>${opt}</span><div class="checkmark"></div>`;
-            div.onclick = () => {
-                if (!cust.models.features) cust.models.features = [];
-                const foundIndex = cust.models.features.indexOf(opt);
-                if (foundIndex > -1) {
-                    cust.models.features.splice(foundIndex, 1);
-                    showNotification(`حذف ویژگی: ${opt}`, "info");
-                } else {
-                    cust.models.features.push(opt);
-                    showNotification(`افزودن ویژگی: ${opt}`, "success");
-                }
-                debouncedSave();
-                updateSelectedModelTexts(index);
-                div.classList.toggle('selected');
-            };
-            featuresContainer.appendChild(div);
-        });
-    }
+    container.innerHTML = "";
+    options.forEach(opt => {
+        const isSelected = opt === selectedValue;
+        const div = document.createElement("div");
+        div.className = `model-option ${isSelected ? 'selected' : ''}`;
+        div.textContent = opt;
+        div.onclick = () => {
+            onClick(opt);
+            // بستن لیست بعد از انتخاب
+            container.style.display = "none";
+        };
+        container.appendChild(div);
+    });
 }
 
 function updateSelectedModelTexts(index) {
@@ -949,6 +1124,7 @@ function updateSelectedModelTexts(index) {
     
     const cust = customers[index];
     
+    // اطمینان از وجود models
     if (!cust.models) {
         cust.models = {
             yakhun: "",
@@ -998,8 +1174,9 @@ function renderPriceAndDeliverySection(index) {
     if (!container) return;
     
     container.innerHTML = `
-        <h4><i class="fas fa-money-bill-wave"></i> قیمت و تحویل</h4>
+        <h4><i class="fas fa-money-bill-wave"></i> قیمت و تاریخ تحویل (افغانی)</h4>
         
+        <!-- قیمت دوخت به افغانی -->
         <div class="price-input-group">
             <label class="price-label">
                 <i class="fas fa-money-bill"></i>
@@ -1008,32 +1185,35 @@ function renderPriceAndDeliverySection(index) {
             <div class="price-input-wrapper">
                 <input type="number" 
                        id="sewingPriceAfghani" 
-                       placeholder="مبلغ"
+                       placeholder="مبلغ به افغانی"
                        value="${customer.sewingPriceAfghani || ''}"
-                       oninput="updateAfghaniPrice(${index}, this.value)">
+                       oninput="updateAfghaniPrice(${index}, this.value)"
+                       class="price-input">
                 <span class="price-unit">افغانی</span>
             </div>
         </div>
         
+        <!-- تیک رسید (پرداخت شده) -->
         <div class="payment-status-section">
             <div class="payment-toggle">
                 <div class="payment-checkbox ${customer.paymentReceived ? 'checked' : ''}" 
                      onclick="togglePaymentReceived(${index})">
                     <div class="checkbox-display ${customer.paymentReceived ? 'checked' : ''}"></div>
-                    <span style="font-weight: bold; color: ${customer.paymentReceived ? 'green' : 'gray'}">
+                    <span style="font-weight: bold; color: ${customer.paymentReceived ? 'var(--success)' : 'var(--royal-silver)'}">
                         ${customer.paymentReceived ? 'پول رسید شد' : 'پول نرسید'}
                     </span>
                 </div>
             </div>
             
             ${customer.paymentReceived && customer.paymentDate ? `
-            <div style="margin-top: 10px; padding: 8px; background: #e8f5e8; border-radius: 6px; text-align: center; font-size: 13px;">
-                <i class="fas fa-calendar-check" style="color: green; margin-left: 5px;"></i>
-                تاریخ: ${new Date(customer.paymentDate).toLocaleDateString('fa-IR')}
+            <div style="margin-top: 10px; padding: 8px; background: rgba(40,167,69,0.15); border-radius: 6px; text-align: center; font-size: 13px;">
+                <i class="fas fa-calendar-check" style="color: var(--success); margin-left: 5px;"></i>
+                تاریخ رسید: ${new Date(customer.paymentDate).toLocaleDateString('fa-IR')}
             </div>
             ` : ''}
         </div>
         
+        <!-- تاریخ تحویل (شنبه تا جمعه) -->
         <div class="delivery-days">
             <label class="price-label">
                 <i class="fas fa-calendar-check"></i>
@@ -1054,6 +1234,7 @@ function renderPriceAndDeliverySection(index) {
     `;
 }
 
+// تابع‌های کمکی برای قیمت و تحویل
 function updateAfghaniPrice(index, price) {
     if (index < 0 || index >= customers.length) return;
     customers[index].sewingPriceAfghani = price ? parseInt(price) : null;
@@ -1078,15 +1259,18 @@ function setDeliveryDay(index, day) {
     customers[index].deliveryDay = day;
     renderPriceAndDeliverySection(index);
     debouncedSave();
-    showNotification(`روز تحویل: ${day}`, "success");
+    showNotification(`روز تحویل به ${day} تنظیم شد`, "success");
 }
 
 // ========== ORDER MANAGEMENT ==========
 function addOrder(index) {
     if (index < 0 || index >= customers.length) return;
     
-    const orderDetails = prompt("جزئیات سفارش:");
-    if (!orderDetails || orderDetails.trim() === "") return;
+    const orderDetails = prompt("جزئیات سفارش جدید:");
+    if (!orderDetails || orderDetails.trim() === "") {
+        showNotification("لطفاً جزئیات سفارش را وارد کنید", "warning");
+        return;
+    }
     
     const newOrder = {
         id: Date.now().toString(),
@@ -1104,7 +1288,7 @@ function addOrder(index) {
     
     renderOrdersHistory(index);
     debouncedSave();
-    showNotification("سفارش اضافه شد", "success");
+    showNotification("سفارش جدید اضافه شد", "success");
 }
 
 function renderOrdersHistory(index) {
@@ -1119,7 +1303,7 @@ function renderOrdersHistory(index) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-clipboard-list"></i>
-                <h4>هیچ سفارشی</h4>
+                <h4>هیچ سفارشی ثبت نشده است</h4>
             </div>
         `;
         return;
@@ -1151,8 +1335,8 @@ function renderCustomerList() {
         list.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-users"></i>
-                <h3>مشتری وجود ندارد</h3>
-                <p>دکمه "مشتری جدید" را بزنید</p>
+                <h3>هنوز مشتری ثبت نشده است</h3>
+                <p>برای شروع، روی دکمه "مشتری جدید" کلیک کنید</p>
             </div>
         `;
         return;
@@ -1166,11 +1350,11 @@ function renderCustomerList() {
             <div>
                 <span class="customer-number">${customer.id ? customer.id.substring(0, 4) : '----'}</span>
                 <strong>${customer.name || 'بدون نام'}</strong> - ${customer.phone || 'بدون شماره'}
-                ${customer.notes ? '<br><small>' + 
+                ${customer.notes ? '<br><small style="color:var(--royal-silver);">' + 
                   (customer.notes.length > 50 ? customer.notes.substring(0, 50) + '...' : customer.notes) + '</small>' : ''}
             </div>
             <button onclick="openProfile(${i})">
-                <i class="fas fa-user-circle"></i> مشاهده
+                <i class="fas fa-user-circle"></i> مشاهده پروفایل
             </button>
         `;
         list.appendChild(div);
@@ -1185,20 +1369,20 @@ async function updateStats() {
             return total + (customer.orders ? customer.orders.length : 0);
         }, 0);
         
-        const dbSize = 0; // می‌توانید محاسبه کنید
+        const dbSize = await dbManager.getDatabaseSize();
         
         document.getElementById("totalCustomers").textContent = totalCustomers;
         document.getElementById("activeOrders").textContent = activeOrders;
         document.getElementById("dbSize").textContent = formatBytes(dbSize);
     } catch (error) {
-        console.error("خطا در آمار:", error);
+        console.error("خطا در به‌روزرسانی آمار:", error);
     }
 }
 
 // ========== SETTINGS FUNCTIONS ==========
 async function saveDataToFile() {
     try {
-        const allCustomers = await dbManager.getAllCustomers(true);
+        const allCustomers = await dbManager.getAllCustomers(true); // Include deleted
         const dataStr = JSON.stringify(allCustomers, null, 2);
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
         
@@ -1211,10 +1395,10 @@ async function saveDataToFile() {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
         
-        showNotification("داده‌ها ذخیره شد", "success");
+        showNotification("داده‌ها با موفقیت ذخیره شد", "success");
     } catch (error) {
         console.error("خطا در ذخیره فایل:", error);
-        showNotification("خطا در ذخیره", "error");
+        showNotification("خطا در ذخیره فایل", "error");
     }
 }
 
@@ -1225,15 +1409,17 @@ function loadDataFromFile(event) {
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
-            showLoading("در حال بارگذاری...");
+            showLoading("در حال بارگذاری داده‌ها...");
             const customersData = JSON.parse(e.target.result);
             
+            // Validate data structure
             if (!Array.isArray(customersData)) {
-                throw new Error("فرمت فایل نامعتبر");
+                throw new Error("فرمت فایل نامعتبر است");
             }
             
             let importedCount = 0;
             for (const customerData of customersData) {
+                // رد کردن مشتری‌های حذف شده
                 if (customerData.deleted) continue;
                 
                 const customer = Customer.fromObject(customerData);
@@ -1242,18 +1428,20 @@ function loadDataFromFile(event) {
             }
             
             hideLoading();
-            showNotification(`${importedCount} مشتری وارد شد`, "success");
+            showNotification(`${importedCount} مشتری با موفقیت وارد شد`, "success");
             
+            // Reload and refresh UI
             await loadCustomersFromDB();
             renderCustomerList();
             updateStats();
             
+            // Reset file input
             event.target.value = '';
             
         } catch (error) {
             hideLoading();
-            console.error("خطا در بارگذاری:", error);
-            showNotification("خطا در بارگذاری: " + error.message, "error");
+            console.error("خطا در بارگذاری فایل:", error);
+            showNotification("خطا در بارگذاری فایل: " + error.message, "error");
         }
     };
     
@@ -1264,70 +1452,83 @@ function toggleDarkMode() {
     document.body.classList.remove('light-mode', 'vivid-mode');
     document.body.classList.add('dark-mode');
     isDarkMode = true;
+    isVividMode = false;
     dbManager.saveSettings('theme', 'dark');
-    showNotification("حالت تاریک", "success");
+    showNotification("حالت تاریک فعال شد", "success");
 }
 
 function toggleLightMode() {
     document.body.classList.remove('dark-mode', 'vivid-mode');
     document.body.classList.add('light-mode');
     isDarkMode = false;
+    isVividMode = false;
     dbManager.saveSettings('theme', 'light');
-    showNotification("حالت روشن", "success");
+    showNotification("حالت روشن فعال شد", "success");
 }
 
 function toggleVividMode() {
     document.body.classList.remove('dark-mode', 'light-mode');
     document.body.classList.add('vivid-mode');
     isDarkMode = false;
+    isVividMode = true;
     dbManager.saveSettings('theme', 'vivid');
-    showNotification("حالت ویوید", "success");
+    showNotification("حالت ویوید فعال شد", "success");
 }
 
 async function optimizeDatabase() {
     try {
-        showLoading("در حال بهینه‌سازی...");
+        showLoading("در حال بهینه‌سازی دیتابیس...");
         
+        // 1. Vacuum deleted records
         const allCustomers = await dbManager.getAllCustomers(true);
         const activeCustomers = allCustomers.filter(c => !c.deleted);
         
+        // 2. Re-save all active customers to compact the database
         for (const customer of activeCustomers) {
             await dbManager.saveCustomer(customer);
         }
         
         hideLoading();
-        showNotification("بهینه‌سازی شد", "success");
+        showNotification("دیتابیس با موفقیت بهینه‌سازی شد", "success");
         
+        // 3. Refresh data
         await loadCustomersFromDB();
         renderCustomerList();
         updateStats();
         
     } catch (error) {
         hideLoading();
-        console.error("خطا در بهینه‌سازی:", error);
-        showNotification("خطا در بهینه‌سازی", "error");
+        console.error("خطا در بهینه‌سازی دیتابیس:", error);
+        showNotification("خطا در بهینه‌سازی دیتابیس", "error");
     }
 }
 
 async function clearAllData() {
-    if (!confirm("⚠️ تمام داده‌ها پاک می‌شود!\nادامه می‌دهید؟")) return;
+    if (!confirm("⚠️ هشدار! آیا از پاک‌سازی تمام داده‌ها مطمئن هستید؟\nاین عمل قابل بازگشت نیست.")) {
+        return;
+    }
     
-    if (!confirm("❌ این عمل غیرقابل بازگشت است!\nمطمئن هستید؟")) return;
+    if (!confirm("❌ هشدار نهایی! تمام مشتریان، سفارشات و تنظیمات پاک خواهند شد.\nادامه می‌دهید؟")) {
+        return;
+    }
     
     try {
-        showLoading("در حال پاک‌سازی...");
+        showLoading("در حال پاک‌سازی داده‌ها...");
         
+        // پاک کردن تمام مشتریان
         await dbManager.clearAllData();
         
+        // پاک کردن آرایه مشتریان
         customers = [];
         currentIndex = null;
         
+        // بارگذاری مجدد UI
         await loadCustomersFromDB();
         renderCustomerList();
         updateStats();
         
         hideLoading();
-        showNotification("تمامی داده‌ها پاک شد", "success");
+        showNotification("تمامی داده‌ها با موفقیت پاک شدند", "success");
         
         if (document.getElementById("profilePage").style.display === "block") {
             backHome();
@@ -1335,13 +1536,13 @@ async function clearAllData() {
         
     } catch (error) {
         hideLoading();
-        console.error("خطا در پاک‌سازی:", error);
-        showNotification("خطا در پاک‌سازی", "error");
+        console.error("خطا در پاک‌سازی داده‌ها:", error);
+        showNotification("خطا در پاک‌سازی داده‌ها", "error");
     }
 }
 
 function advancedSearch() {
-    const searchType = prompt("نوع جستجو:\n1. نام\n2. شماره\n3. مدل یخن\n4. قیمت\n5. روز تحویل\nعدد را وارد کنید:");
+    const searchType = prompt("نوع جستجو:\n1. نام\n2. شماره تماس\n3. مدل یخن\n4. قیمت\n5. روز تحویل\nعدد مربوطه را وارد کنید:");
     
     if (!searchType) return;
     
@@ -1350,26 +1551,26 @@ function advancedSearch() {
             searchCustomer();
             break;
         case '2':
-            const phone = prompt("شماره:");
+            const phone = prompt("شماره تماس را وارد کنید:");
             if (phone) {
                 document.getElementById("searchInput").value = phone;
                 searchCustomer();
             }
             break;
         case '3':
-            const yakhunModel = prompt("مدل یخن:\n" + AppConfig.YAKHUN_MODELS.join("\n"));
+            const yakhunModel = prompt("مدل یخن را انتخاب کنید:\n" + AppConfig.YAKHUN_MODELS.join("\n"));
             if (yakhunModel) {
                 performAdvancedSearch('yakhun', yakhunModel);
             }
             break;
         case '4':
-            const priceRange = prompt("محدوده قیمت (مثلاً 1000-2000):");
+            const priceRange = prompt("محدوده قیمت (مثلاً 1000-2000 یا >1500):");
             if (priceRange) {
                 performPriceSearch(priceRange);
             }
             break;
         case '5':
-            const deliveryDay = prompt("روز تحویل:\nشنبه\nیکشنبه\nدوشنبه\nسه‌شنبه\nچهارشنبه\nپنجشنبه\nجمعه");
+            const deliveryDay = prompt("روز تحویل را انتخاب کنید:\nشنبه\nیکشنبه\nدوشنبه\nسه‌شنبه\nچهارشنبه\nپنجشنبه\nجمعه");
             if (deliveryDay) {
                 performDeliverySearch(deliveryDay);
             }
@@ -1381,7 +1582,7 @@ function advancedSearch() {
 
 async function performAdvancedSearch(field, value) {
     try {
-        showLoading("جستجو...");
+        showLoading("در حال جستجو...");
         const allCustomers = await dbManager.getAllCustomers();
         
         const results = allCustomers.filter(customer => {
@@ -1395,14 +1596,14 @@ async function performAdvancedSearch(field, value) {
         renderSearchResults(results, value);
     } catch (error) {
         hideLoading();
-        console.error("خطا در جستجو:", error);
+        console.error("خطا در جستجوی پیشرفته:", error);
         showNotification("خطا در جستجو", "error");
     }
 }
 
 async function performPriceSearch(range) {
     try {
-        showLoading("جستجو...");
+        showLoading("در حال جستجو...");
         const allCustomers = await dbManager.getAllCustomers();
         
         const results = allCustomers.filter(customer => {
@@ -1426,14 +1627,14 @@ async function performPriceSearch(range) {
         renderSearchResults(results, `قیمت: ${range}`);
     } catch (error) {
         hideLoading();
-        console.error("خطا در جستجو:", error);
+        console.error("خطا در جستجوی قیمت:", error);
         showNotification("خطا در جستجو", "error");
     }
 }
 
 async function performDeliverySearch(day) {
     try {
-        showLoading("جستجو...");
+        showLoading("در حال جستجو...");
         const allCustomers = await dbManager.getAllCustomers();
         
         const results = allCustomers.filter(customer => {
@@ -1441,10 +1642,10 @@ async function performDeliverySearch(day) {
         });
         
         hideLoading();
-        renderSearchResults(results, `تحویل: ${day}`);
+        renderSearchResults(results, `روز تحویل: ${day}`);
     } catch (error) {
         hideLoading();
-        console.error("خطا در جستجو:", error);
+        console.error("خطا در جستجوی روز تحویل:", error);
         showNotification("خطا در جستجو", "error");
     }
 }
@@ -1454,21 +1655,60 @@ function printLabels(index) {
     
     const customer = customers[index];
     
+    // اطمینان از وجود مقادیر
     const yakhun = customer.models ? customer.models.yakhun || '-' : '-';
     const sleeve = customer.models ? customer.models.sleeve || '-' : '-';
     const deliveryDay = customer.deliveryDay || '-';
     const price = customer.sewingPriceAfghani ? customer.sewingPriceAfghani + ' افغانی' : '-';
     const height = customer.measurements ? customer.measurements.قد || '-' : '-';
     
+    // Create print content
     const printContent = `
         <html>
             <head>
                 <title>لیبل ${customer.name}</title>
                 <style>
-                    body { font-family: Tahoma; direction: rtl; padding: 20px; }
-                    .label { border: 2px solid #000; padding: 15px; margin: 10px; width: 300px; }
-                    .label-header { text-align: center; border-bottom: 1px solid #000; margin-bottom: 10px; padding-bottom: 5px; }
-                    .label-row { margin: 8px 0; display: flex; justify-content: space-between; }
+                    body { 
+                        font-family: Tahoma, Arial, sans-serif; 
+                        direction: rtl; 
+                        padding: 20px; 
+                        margin: 0;
+                        background: white;
+                    }
+                    @page {
+                        size: A4;
+                        margin: 0;
+                    }
+                    .label { 
+                        border: 2px solid #000; 
+                        padding: 15px; 
+                        margin: 10px auto; 
+                        width: 300px;
+                        page-break-inside: avoid;
+                    }
+                    .label-header { 
+                        text-align: center; 
+                        border-bottom: 1px solid #000; 
+                        margin-bottom: 10px; 
+                        padding-bottom: 5px; 
+                    }
+                    .label-row { 
+                        margin: 8px 0; 
+                        display: flex; 
+                        justify-content: space-between;
+                        font-size: 14px;
+                    }
+                    .label-row strong {
+                        color: #333;
+                    }
+                    h3 {
+                        margin: 0 0 5px 0;
+                        color: #222;
+                    }
+                    h4 {
+                        margin: 0;
+                        color: #555;
+                    }
                 </style>
             </head>
             <body>
@@ -1490,18 +1730,25 @@ function printLabels(index) {
                         <span>${sleeve}</span>
                     </div>
                     <div class="label-row">
-                        <strong>تحویل:</strong>
+                        <strong>تاریخ تحویل:</strong>
                         <span>${deliveryDay}</span>
                     </div>
                     <div class="label-row">
                         <strong>قیمت:</strong>
                         <span>${price}</span>
                     </div>
+                    ${customer.notes ? `
+                    <div class="label-row">
+                        <strong>یادداشت:</strong>
+                        <span style="max-width: 150px; text-align: left;">${customer.notes.substring(0, 50)}${customer.notes.length > 50 ? '...' : ''}</span>
+                    </div>
+                    ` : ''}
                 </div>
             </body>
         </html>
     `;
     
+    // Open print window
     const printWindow = window.open('', '_blank');
     printWindow.document.write(printContent);
     printWindow.document.close();
@@ -1512,13 +1759,37 @@ function printLabels(index) {
         printWindow.close();
     }, 500);
     
-    showNotification("چاپ لیبل", "success");
+    showNotification("چاپ لیبل آغاز شد", "success");
+}
+
+// ========== KEYBOARD NAVIGATION ==========
+function navigateFields(direction) {
+    const inputs = document.querySelectorAll('.field-input[contenteditable="true"]');
+    if (inputs.length === 0) return;
+    
+    currentFieldIndex += direction;
+    
+    if (currentFieldIndex < 0) {
+        currentFieldIndex = inputs.length - 1;
+    } else if (currentFieldIndex >= inputs.length) {
+        currentFieldIndex = 0;
+    }
+    
+    const input = inputs[currentFieldIndex];
+    input.focus();
+    
+    // انتخاب متن داخل فیلد
+    const range = document.createRange();
+    range.selectNodeContents(input);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
 }
 
 // ========== INITIALIZATION ==========
 async function initializeApp() {
     try {
-        showLoading("راه‌اندازی ALFAJR...");
+        showLoading("در حال راه‌اندازی اپلیکیشن...");
         
         // Initialize database
         await dbManager.init();
@@ -1526,7 +1797,7 @@ async function initializeApp() {
         // Load customers
         await loadCustomersFromDB();
         
-        // Load theme
+        // Load saved theme
         const savedTheme = await dbManager.getSettings('theme');
         if (savedTheme === 'light') {
             toggleLightMode();
@@ -1536,11 +1807,11 @@ async function initializeApp() {
             toggleDarkMode();
         }
         
-        // Render UI
+        // Render initial UI
         renderCustomerList();
         await updateStats();
         
-        // Event listeners
+        // Setup event listeners
         const fileInput = document.getElementById("fileInput");
         if (fileInput) {
             fileInput.addEventListener("change", loadDataFromFile);
@@ -1553,22 +1824,26 @@ async function initializeApp() {
             });
         }
         
-        // Keyboard shortcuts
+        // Setup keyboard shortcuts
         document.addEventListener('keydown', function(e) {
+            // Ctrl+S to save
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
                 saveCustomerToDB();
             }
             
+            // Escape to go back
             if (e.key === 'Escape' && document.getElementById("profilePage").style.display === "block") {
                 backHome();
             }
             
+            // Tab navigation in measurements
             if (e.key === 'Tab' && document.getElementById("profilePage").style.display === "block") {
                 e.preventDefault();
-                // navigate fields if needed
+                navigateFields(e.shiftKey ? -1 : 1);
             }
             
+            // Ctrl+F برای جستجو
             if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
                 e.preventDefault();
                 const searchInput = document.getElementById("searchInput");
@@ -1579,67 +1854,30 @@ async function initializeApp() {
             }
         });
         
-        // Before unload
+        // هندلر برای بستن صفحه
         window.addEventListener('beforeunload', function(e) {
             if (currentIndex !== null) {
+                // ذخیره نهایی
                 debouncedSave();
             }
         });
         
-        // PWA Install Prompt
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            
-            setTimeout(() => {
-                if (deferredPrompt && !document.getElementById('installBtn')) {
-                    const btn = document.createElement('button');
-                    btn.id = 'installBtn';
-                    btn.innerHTML = '📲 نصب اپ';
-                    btn.style.cssText = `
-                        position: fixed;
-                        bottom: 20px;
-                        left: 20px;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        color: white;
-                        border: none;
-                        padding: 12px 24px;
-                        border-radius: 50px;
-                        font-weight: bold;
-                        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-                        z-index: 9999;
-                        cursor: pointer;
-                    `;
-                    btn.onclick = async () => {
-                        if (!deferredPrompt) return;
-                        deferredPrompt.prompt();
-                        const { outcome } = await deferredPrompt.userChoice;
-                        if (outcome === 'accepted') {
-                            showNotification('✅ اپ نصب شد!', 'success');
-                        }
-                        btn.style.display = 'none';
-                        deferredPrompt = null;
-                    };
-                    document.body.appendChild(btn);
-                }
-            }, 3000);
-        });
-        
         hideLoading();
-        showNotification("ALFAJR آماده است", "success");
+        showNotification("اپلیکیشن ALFAJR آماده است", "success");
         
     } catch (error) {
         hideLoading();
-        console.error("خطا در راه‌اندازی:", error);
-        showNotification("خطا در راه‌اندازی", "error");
+        console.error("خطا در راه‌اندازی اپلیکیشن:", error);
+        showNotification("خطا در راه‌اندازی اپلیکیشن", "error");
         
+        // نمایش وضعیت اضطراری
         document.getElementById("customerList").innerHTML = `
             <div class="empty-state error">
                 <i class="fas fa-exclamation-triangle"></i>
                 <h3>خطا در راه‌اندازی</h3>
+                <p>لطفاً صفحه را رفرش کنید یا مرورگر را عوض کنید</p>
                 <button onclick="location.reload()" style="margin-top: 10px;">
-                    <i class="fas fa-redo"></i> رفرش
+                    <i class="fas fa-redo"></i> رفرش صفحه
                 </button>
             </div>
         `;
@@ -1647,7 +1885,9 @@ async function initializeApp() {
 }
 
 // ========== START APPLICATION ==========
-// Global exports برای HTML onclick
+document.addEventListener('DOMContentLoaded', initializeApp);
+
+// Export functions to global scope for HTML onclick events
 window.addCustomer = addCustomer;
 window.searchCustomer = searchCustomer;
 window.advancedSearch = advancedSearch;
@@ -1670,10 +1910,3 @@ window.toggleLightMode = toggleLightMode;
 window.toggleVividMode = toggleVividMode;
 window.optimizeDatabase = optimizeDatabase;
 window.clearAllData = clearAllData;
-
-// Start when DOM is loaded
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeApp);
-} else {
-    initializeApp();
-}
