@@ -1,4 +1,3 @@
-
 // ========== ALFAJR TAILORING MANAGEMENT SYSTEM ==========
 // Version 4.0 - Professional Complete Edition
 // Author: ALFAJR Team
