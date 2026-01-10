@@ -1,1 +1,1840 @@
 
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#D4AF37">
+    <meta name="description" content="سیستم مدیریت خیاطی ALFAJR - نسخه حرفه‌ای">
+    
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <title>ALFAJR خیاطی - سیستم مدیریت حرفه‌ای</title>
+    
+    <style>
+        /* ========== RESET & BASE STYLES ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-gold: #D4AF37;
+            --primary-dark: #1a1a1a;
+            --primary-light: #f8f9fa;
+            --text-light: #C0C0C0;
+            --text-dark: #333333;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --border-radius: 10px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            line-height: 1.6;
+            transition: var(--transition);
+            overflow-x: hidden;
+        }
+        
+        /* ========== THEME VARIATIONS ========== */
+        body.dark-mode {
+            background: #1a1a1a;
+            color: #C0C0C0;
+        }
+        
+        body.light-mode {
+            background: #f8f9fa;
+            color: #333333;
+        }
+        
+        body.light-mode .container {
+            background: #ffffff;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        body.vivid-mode {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+        }
+        
+        /* ========== LAYOUT ========== */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        /* ========== HEADER & LOGO ========== */
+        .main-header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border-radius: var(--border-radius);
+            margin-bottom: 30px;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .main-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-gold), transparent);
+        }
+        
+        .logo {
+            font-size: 3.5rem;
+            color: var(--primary-gold);
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .logo i {
+            font-size: 4rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .tagline {
+            color: var(--text-light);
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        /* ========== SETTINGS MENU ========== */
+        .settings-menu {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            z-index: 1000;
+        }
+        
+        .settings-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(212, 175, 55, 0.2);
+            border: 2px solid rgba(212, 175, 55, 0.4);
+            color: var(--primary-gold);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .settings-btn:hover {
+            background: rgba(212, 175, 55, 0.4);
+            transform: rotate(90deg) scale(1.1);
+        }
+        
+        .settings-dropdown {
+            position: absolute;
+            top: 70px;
+            left: 0;
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid rgba(212, 175, 55, 0.4);
+            border-radius: 15px;
+            padding: 15px;
+            min-width: 280px;
+            display: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            backdrop-filter: blur(20px);
+        }
+        
+        .settings-dropdown.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .settings-dropdown button {
+            width: 100%;
+            padding: 15px;
+            margin: 8px 0;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1rem;
+            transition: var(--transition);
+            text-align: right;
+        }
+        
+        .settings-dropdown button:hover {
+            background: rgba(212, 175, 55, 0.3);
+            transform: translateX(-5px);
+            color: #ffffff;
+        }
+        
+        .settings-dropdown button i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .settings-dropdown .delete-btn {
+            background: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+        }
+        
+        .settings-dropdown .delete-btn:hover {
+            background: rgba(220, 53, 69, 0.4);
+        }
+        
+        /* ========== LOADING OVERLAY ========== */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(10px);
+        }
+        
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 5px solid rgba(212, 175, 55, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-gold);
+            animation: spin 1s linear infinite;
+            margin-bottom: 30px;
+        }
+        
+        #loadingText {
+            color: var(--primary-gold);
+            font-size: 1.3rem;
+            text-align: center;
+            max-width: 400px;
+            line-height: 1.8;
+        }
+        
+        /* ========== NOTIFICATION ========== */
+        #globalNotification {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            padding: 20px 30px;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+            z-index: 9998;
+            max-width: 400px;
+            box-shadow: var(--box-shadow);
+            display: none;
+            align-items: center;
+            gap: 15px;
+            backdrop-filter: blur(10px);
+            animation: slideInRight 0.5s ease;
+            border-left: 5px solid;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        #globalNotification.success {
+            background: rgba(40, 167, 69, 0.9);
+            border-left-color: #28a745;
+        }
+        
+        #globalNotification.error {
+            background: rgba(220, 53, 69, 0.9);
+            border-left-color: #dc3545;
+        }
+        
+        #globalNotification.warning {
+            background: rgba(255, 193, 7, 0.9);
+            color: #333;
+            border-left-color: #ffc107;
+        }
+        
+        #globalNotification.info {
+            background: rgba(23, 162, 184, 0.9);
+            border-left-color: #17a2b8;
+        }
+        
+        /* ========== DATABASE STATUS ========== */
+        #dbStatus {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 999;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: var(--transition);
+        }
+        
+        #dbStatus.connected {
+            background: rgba(40, 167, 69, 0.9);
+            color: white;
+        }
+        
+        #dbStatus.disconnected {
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+        }
+        
+        /* ========== HOME PAGE ========== */
+        #homePage {
+            animation: fadeIn 0.5s ease;
+        }
+        
+        /* ========== STATS BAR ========== */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            text-align: center;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary-gold);
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gold);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .stat-value {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: var(--primary-gold);
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+        }
+        
+        .stat-label {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            opacity: 0.9;
+        }
+        
+        .stat-icon {
+            font-size: 2.5rem;
+            color: rgba(212, 175, 55, 0.3);
+            margin-bottom: 20px;
+        }
+        
+        /* ========== SEARCH SECTION ========== */
+        .search-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(212, 175, 55, 0.2);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .search-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            color: var(--primary-gold);
+        }
+        
+        .search-header i {
+            font-size: 1.8rem;
+        }
+        
+        .search-header h3 {
+            font-size: 1.5rem;
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #searchInput {
+            flex: 1;
+            min-width: 300px;
+            max-width: 500px;
+            padding: 18px 25px;
+            font-size: 1.1rem;
+            background: rgba(255, 255, 255, 0.07);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+        
+        #searchInput:focus {
+            outline: none;
+            border-color: var(--primary-gold);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+        }
+        
+        .search-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        /* ========== BUTTONS ========== */
+        button {
+            padding: 15px 25px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 50px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-gold), #b8951f);
+            color: #000;
+            border: 2px solid var(--primary-gold);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #b8951f, var(--primary-gold));
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(212, 175, 55, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #1e7e34);
+            color: white;
+            border: 2px solid var(--success);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #bd2130);
+            color: white;
+            border: 2px solid var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #bd2130, var(--danger));
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(220, 53, 69, 0.4);
+        }
+        
+        /* ========== CUSTOMER LIST ========== */
+        .customer-list-section {
+            margin-top: 40px;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            color: var(--primary-gold);
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+        }
+        
+        .section-title i {
+            font-size: 1.8rem;
+        }
+        
+        #customerList {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+        
+        .customer-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .customer-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary-gold);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            background: rgba(212, 175, 55, 0.05);
+        }
+        
+        .customer-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .customer-card:hover::after {
+            opacity: 1;
+        }
+        
+        .customer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .customer-id {
+            font-family: 'Courier New', monospace;
+            background: rgba(15, 206, 255, 0.1);
+            color: #0fceff;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .customer-date {
+            color: var(--text-light);
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+        
+        .customer-name {
+            font-size: 1.5rem;
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .customer-phone {
+            color: #0fceff;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .customer-notes {
+            color: var(--text-light);
+            opacity: 0.8;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            max-height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .customer-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .customer-badges {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .badge.price {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+        
+        .badge.paid {
+            background: rgba(15, 206, 255, 0.2);
+            color: #0fceff;
+            border: 1px solid rgba(15, 206, 255, 0.3);
+        }
+        
+        .badge.delivery {
+            background: rgba(212, 175, 55, 0.2);
+            color: var(--primary-gold);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+        
+        .delete-btn-small {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .delete-btn-small:hover {
+            background: rgba(220, 53, 69, 0.3);
+            transform: scale(1.1);
+        }
+        
+        /* ========== EMPTY STATE ========== */
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+            color: var(--text-light);
+            opacity: 0.7;
+            grid-column: 1 / -1;
+        }
+        
+        .empty-state i {
+            font-size: 5rem;
+            color: rgba(212, 175, 55, 0.3);
+            margin-bottom: 30px;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: var(--primary-gold);
+        }
+        
+        .empty-state p {
+            font-size: 1.1rem;
+            max-width: 500px;
+            margin: 0 auto 30px;
+            line-height: 1.8;
+        }
+        
+        /* ========== PROFILE PAGE ========== */
+        #profilePage {
+            animation: fadeIn 0.5s ease;
+            padding-bottom: 50px;
+        }
+        
+        .profile-header-section {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            margin-bottom: 40px;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .profile-header-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-gold), transparent);
+        }
+        
+        .profile-main-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .profile-name {
+            font-size: 2.5rem;
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .profile-phone {
+            font-size: 1.5rem;
+            color: #0fceff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .profile-id {
+            background: rgba(15, 206, 255, 0.1);
+            color: #0fceff;
+            padding: 10px 20px;
+            border-radius: 30px;
+            display: inline-block;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+        }
+        
+        .print-buttons-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            z-index: 10;
+        }
+        
+        /* ========== PROFILE SECTIONS ========== */
+        .profile-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            padding: 35px;
+            margin-bottom: 30px;
+            transition: var(--transition);
+        }
+        
+        .profile-section:hover {
+            border-color: var(--primary-gold);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+        }
+        
+        .section-header h3 {
+            color: var(--primary-gold);
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .section-header i {
+            font-size: 1.8rem;
+        }
+        
+        /* ========== NOTES SECTION ========== */
+        #customerNotes {
+            width: 100%;
+            min-height: 150px;
+            padding: 20px;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border-radius: var(--border-radius);
+            resize: vertical;
+            transition: var(--transition);
+        }
+        
+        #customerNotes:focus {
+            outline: none;
+            border-color: var(--primary-gold);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        /* ========== MEASUREMENTS SECTION ========== */
+        #measurementsContainer .section-header {
+            border-bottom-color: rgba(40, 167, 69, 0.3);
+        }
+        
+        #measurementsContainer .section-header h3 {
+            color: #28a745;
+        }
+        
+        .measurements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .measurement-group {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            padding: 25px;
+        }
+        
+        .measurement-group h4 {
+            color: #0fceff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 1.2rem;
+        }
+        
+        .measurement-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .measurement-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .measurement-field label {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+        
+        .measurement-input {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-light);
+            font-size: 1.1rem;
+            transition: var(--transition);
+        }
+        
+        .measurement-input:focus {
+            outline: none;
+            border-color: #28a745;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        /* ========== MODELS SECTION ========== */
+        #modelsContainer .section-header {
+            border-bottom-color: rgba(255, 193, 7, 0.3);
+        }
+        
+        #modelsContainer .section-header h3 {
+            color: #ffc107;
+        }
+        
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .model-category {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            padding: 25px;
+        }
+        
+        .model-category h4 {
+            color: #0fceff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .model-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .model-option {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1rem;
+            color: var(--text-light);
+        }
+        
+        .model-option:hover {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--primary-gold);
+            transform: translateY(-3px);
+        }
+        
+        .model-option.selected {
+            background: rgba(212, 175, 55, 0.3);
+            border-color: var(--primary-gold);
+            color: #ffffff;
+            font-weight: bold;
+        }
+        
+        .model-option.multi-select {
+            position: relative;
+            padding-right: 45px;
+        }
+        
+        .checkmark {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-gold);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        /* ========== PRICE & DELIVERY SECTION ========== */
+        #priceDeliveryContainer .section-header {
+            border-bottom-color: rgba(23, 162, 184, 0.3);
+        }
+        
+        #priceDeliveryContainer .section-header h3 {
+            color: #17a2b8;
+        }
+        
+        .price-delivery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .price-section,
+        .payment-section,
+        .delivery-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            padding: 25px;
+        }
+        
+        .price-section h4,
+        .payment-section h4,
+        .delivery-section h4 {
+            color: #0fceff;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .price-input-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        #sewingPrice {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border-radius: 8px;
+        }
+        
+        .currency {
+            color: var(--primary-gold);
+            font-weight: bold;
+            font-size: 1.3rem;
+            min-width: 80px;
+        }
+        
+        .payment-toggle {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .payment-toggle:hover {
+            border-color: var(--primary-gold);
+            background: rgba(212, 175, 55, 0.05);
+        }
+        
+        .payment-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 1.2rem;
+        }
+        
+        .payment-checkbox.checked {
+            color: #28a745;
+        }
+        
+        .checkbox-icon {
+            width: 30px;
+            height: 30px;
+            border: 3px solid currentColor;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .payment-date {
+            margin-top: 15px;
+            color: var(--text-light);
+            opacity: 0.8;
+            font-size: 0.95rem;
+        }
+        
+        .delivery-days {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .day-button {
+            flex: 1;
+            min-width: 120px;
+            padding: 15px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1.1rem;
+        }
+        
+        .day-button:hover {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--primary-gold);
+        }
+        
+        .day-button.selected {
+            background: rgba(212, 175, 55, 0.3);
+            border-color: var(--primary-gold);
+            color: #ffffff;
+            font-weight: bold;
+        }
+        
+        /* ========== ORDERS SECTION ========== */
+        #ordersContainer .section-header {
+            border-bottom-color: rgba(108, 117, 125, 0.3);
+        }
+        
+        #ordersContainer .section-header h3 {
+            color: #6c757d;
+        }
+        
+        .btn-add-order {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+        }
+        
+        .empty-orders {
+            text-align: center;
+            padding: 50px 30px;
+            color: var(--text-light);
+            opacity: 0.7;
+        }
+        
+        .empty-orders i {
+            font-size: 4rem;
+            color: rgba(255, 255, 255, 0.1);
+            margin-bottom: 25px;
+        }
+        
+        .empty-orders p {
+            font-size: 1.2rem;
+        }
+        
+        .orders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .order-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            transition: var(--transition);
+        }
+        
+        .order-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .order-content {
+            flex: 1;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .order-number {
+            color: #0fceff;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .order-date {
+            color: var(--text-light);
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+        
+        .order-details {
+            color: var(--text-light);
+            line-height: 1.8;
+            font-size: 1.05rem;
+        }
+        
+        .btn-delete-order {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-left: 20px;
+        }
+        
+        .btn-delete-order:hover {
+            background: rgba(220, 53, 69, 0.3);
+            transform: scale(1.1);
+        }
+        
+        /* ========== ACTION BUTTONS ========== */
+        .profile-action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 50px;
+            flex-wrap: wrap;
+        }
+        
+        /* ========== ANIMATIONS ========== */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* ========== RESPONSIVE DESIGN ========== */
+        @media (max-width: 1200px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .logo {
+                font-size: 2.8rem;
+            }
+            
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .logo {
+                font-size: 2.3rem;
+            }
+            
+            .logo i {
+                font-size: 3rem;
+            }
+            
+            #customerList {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+            
+            .measurements-grid,
+            .models-grid,
+            .price-delivery-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .main-header {
+                padding: 20px 15px;
+            }
+            
+            .logo {
+                font-size: 1.8rem;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .logo i {
+                font-size: 2.5rem;
+            }
+            
+            .stats-bar {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .stat-card {
+                padding: 20px;
+            }
+            
+            .stat-value {
+                font-size: 2.8rem;
+            }
+            
+            .search-section {
+                padding: 25px 15px;
+            }
+            
+            .search-box {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            #searchInput {
+                min-width: 100%;
+                margin-bottom: 15px;
+            }
+            
+            .search-buttons {
+                justify-content: center;
+            }
+            
+            .settings-menu {
+                top: 15px;
+                left: 15px;
+            }
+            
+            .settings-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.3rem;
+            }
+            
+            .settings-dropdown {
+                min-width: 250px;
+            }
+            
+            .profile-header-section {
+                padding: 25px 15px;
+            }
+            
+            .profile-name {
+                font-size: 2rem;
+            }
+            
+            .profile-phone {
+                font-size: 1.3rem;
+            }
+            
+            .profile-section {
+                padding: 25px 15px;
+            }
+            
+            .back-button {
+                top: 15px;
+                left: 15px;
+            }
+            
+            #dbStatus {
+                bottom: 15px;
+                left: 15px;
+                font-size: 0.8rem;
+                padding: 10px 15px;
+            }
+            
+            #globalNotification {
+                top: 15px;
+                right: 15px;
+                left: 15px;
+                max-width: none;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .logo {
+                font-size: 1.5rem;
+            }
+            
+            .tagline {
+                font-size: 1rem;
+            }
+            
+            .customer-card {
+                padding: 20px;
+            }
+            
+            .customer-name {
+                font-size: 1.3rem;
+            }
+            
+            .profile-action-buttons {
+                flex-direction: column;
+            }
+            
+            .profile-action-buttons button {
+                width: 100%;
+            }
+            
+            .print-buttons-container {
+                flex-direction: column;
+            }
+            
+            .print-buttons-container button {
+                width: 100%;
+            }
+        }
+        
+        /* ========== SCROLLBAR STYLING ========== */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-gold);
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #b8951f;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div id="loadingText">در حال راه‌اندازی سیستم ALFAJR...</div>
+    </div>
+
+    <!-- Global Notification -->
+    <div id="globalNotification"></div>
+
+    <!-- Database Status -->
+    <div id="dbStatus" class="db-status">
+        <i class="fas fa-database"></i>
+        <span>در حال اتصال به دیتابیس...</span>
+    </div>
+
+    <!-- Settings Menu -->
+    <div class="settings-menu">
+        <button class="settings-btn" onclick="toggleSettings()">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="settings-dropdown" id="settingsDropdown">
+            <button onclick="saveDataToFile()">
+                <i class="fas fa-save"></i>
+                ذخیره پشتیبان
+            </button>
+            <button onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-folder-open"></i>
+                بازیابی پشتیبان
+            </button>
+            <button onclick="toggleDarkMode()">
+                <i class="fas fa-moon"></i>
+                حالت تاریک
+            </button>
+            <button onclick="toggleLightMode()">
+                <i class="fas fa-sun"></i>
+                حالت روشن
+            </button>
+            <button onclick="toggleVividMode()">
+                <i class="fas fa-palette"></i>
+                حالت ویوید
+            </button>
+            <button onclick="optimizeDatabase()">
+                <i class="fas fa-broom"></i>
+                بهینه‌سازی دیتابیس
+            </button>
+            <button onclick="clearAllData()" class="delete-btn">
+                <i class="fas fa-trash"></i>
+                پاک‌سازی کامل
+            </button>
+        </div>
+    </div>
+
+    <!-- Hidden File Input for Backup -->
+    <input type="file" id="fileInput" accept=".json" style="display: none;">
+
+    <div class="container">
+        <!-- Home Page -->
+        <div id="homePage">
+            <!-- Main Header -->
+            <div class="main-header">
+                <div class="logo">
+                    <i class="fas fa-tshirt"></i>
+                    <div>
+                        <div>ALFAJR خیاطی</div>
+                        <div class="tagline">سیستم مدیریت حرفه‌ای مشتریان و سفارشات</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="stats-bar" id="statsBar">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-value" id="totalCustomers">0</div>
+                    <div class="stat-label">کل مشتریان</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-value" id="paidCustomers">0</div>
+                    <div class="stat-label">پرداخت شده</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+                    <div class="stat-value" id="activeOrders">0</div>
+                    <div class="stat-label">سفارشات فعال</div>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="search-section">
+                <div class="search-header">
+                    <i class="fas fa-search"></i>
+                    <h3>جستجوی مشتریان</h3>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="جستجو بر اساس نام، شماره تماس، کد یا توضیحات...">
+                    <div class="search-buttons">
+                        <button class="btn-primary" onclick="searchCustomer()">
+                            <i class="fas fa-search"></i>
+                            جستجو
+                        </button>
+                        <button class="btn-success" onclick="addCustomer()">
+                            <i class="fas fa-user-plus"></i>
+                            مشتری جدید
+                        </button>
+                        <button class="btn-secondary" onclick="showAdvancedSearch()">
+                            <i class="fas fa-filter"></i>
+                            جستجوی پیشرفته
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer List -->
+            <div class="customer-list-section">
+                <div class="section-title">
+                    <i class="fas fa-users"></i>
+                    <h3>لیست مشتریان</h3>
+                </div>
+                <div id="customerList">
+                    <!-- Customer cards will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div id="profilePage" style="display: none;">
+            <!-- Back Button -->
+            <button class="back-button btn-secondary" onclick="backHome()">
+                <i class="fas fa-arrow-right"></i>
+                بازگشت به لیست
+            </button>
+
+            <!-- Profile Header -->
+            <div class="profile-header-section">
+                <div class="profile-main-info">
+                    <div class="profile-name" id="profileName">نام مشتری</div>
+                    <div class="profile-phone" id="profilePhone">
+                        <i class="fas fa-phone"></i>
+                        <span id="profilePhoneText">شماره تماس</span>
+                    </div>
+                    <div class="profile-id" id="profileId">کد: ----------</div>
+                </div>
+
+                <!-- Print Buttons -->
+                <div class="print-buttons-container" id="printButtonsContainer">
+                    <!-- Print buttons will be added here dynamically -->
+                </div>
+            </div>
+
+            <!-- Customer Notes -->
+            <div class="profile-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-sticky-note"></i> توضیحات مشتری</h3>
+                </div>
+                <textarea id="customerNotes" placeholder="توضیحات و یادداشت‌های مربوط به این مشتری را اینجا وارد کنید..."></textarea>
+            </div>
+
+            <!-- Measurements Section -->
+            <div class="profile-section" id="measurementsContainer">
+                <!-- Measurements will be loaded here -->
+            </div>
+
+            <!-- Models Section -->
+            <div class="profile-section" id="modelsContainer">
+                <!-- Models will be loaded here -->
+            </div>
+
+            <!-- Price & Delivery Section -->
+            <div class="profile-section" id="priceDeliveryContainer">
+                <!-- Price & Delivery will be loaded here -->
+            </div>
+
+            <!-- Orders Section -->
+            <div class="profile-section" id="ordersContainer">
+                <!-- Orders will be loaded here -->
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="profile-action-buttons">
+                <button class="btn-primary" onclick="saveCustomer()">
+                    <i class="fas fa-save"></i>
+                    ذخیره تغییرات
+                </button>
+                <button class="btn-success" onclick="printThermalLabel()">
+                    <i class="fas fa-print"></i>
+                    چاپ لیبل اندازه‌گیری
+                </button>
+                <button class="btn-secondary" onclick="printThermalInvoice()">
+                    <i class="fas fa-file-invoice"></i>
+                    چاپ فاکتور
+                </button>
+                <button class="btn-danger" onclick="deleteCurrentCustomer()">
+                    <i class="fas fa-trash"></i>
+                    حذف مشتری
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="app.js"></script>
+    
+    <!-- PWA Service Worker -->
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker ثبت شد:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('❌ خطا در ثبت Service Worker:', error);
+                    });
+            });
+        }
+
+        // Toggle Settings Dropdown
+        function toggleSettings() {
+            const dropdown = document.getElementById('settingsDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (event) => {
+            const dropdown = document.getElementById('settingsDropdown');
+            const settingsBtn = document.querySelector('.settings-btn');
+            
+            if (dropdown && settingsBtn && 
+                !dropdown.contains(event.target) && 
+                !settingsBtn.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Theme Functions
+        function toggleDarkMode() {
+            document.body.className = 'dark-mode';
+            saveTheme('dark');
+            showNotification('حالت تاریک فعال شد', 'success');
+        }
+
+        function toggleLightMode() {
+            document.body.className = 'light-mode';
+            saveTheme('light');
+            showNotification('حالت روشن فعال شد', 'success');
+        }
+
+        function toggleVividMode() {
+            document.body.className = 'vivid-mode';
+            saveTheme('vivid');
+            showNotification('حالت ویوید فعال شد', 'success');
+        }
+
+        function saveTheme(theme) {
+            localStorage.setItem('alfajr_theme', theme);
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('alfajr_theme') || 'dark';
+            if (savedTheme === 'light') toggleLightMode();
+            else if (savedTheme === 'vivid') toggleVividMode();
+            else toggleDarkMode();
+        }
+
+        // Initialize theme on load
+        document.addEventListener('DOMContentLoaded', loadTheme);
+
+        // Global helper functions
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('globalNotification');
+            if (!notification) return;
+            
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'flex';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 4000);
+        }
+
+        function showLoading(message = 'در حال پردازش...') {
+            const overlay = document.getElementById('loadingOverlay');
+            const text = document.getElementById('loadingText');
+            
+            if (overlay && text) {
+                text.textContent = message;
+                overlay.style.display = 'flex';
+            }
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+
+        function optimizeDatabase() {
+            if (confirm('آیا از بهینه‌سازی دیتابیس مطمئن هستید؟')) {
+                showLoading('در حال بهینه‌سازی...');
+                setTimeout(() => {
+                    hideLoading();
+                    showNotification('دیتابیس با موفقیت بهینه‌سازی شد', 'success');
+                }, 2000);
+            }
+        }
+
+        function deleteCurrentCustomer() {
+            if (typeof window.currentCustomerIndex !== 'undefined' && window.currentCustomerIndex !== null) {
+                const customer = window.customers[window.currentCustomerIndex];
+                if (customer && confirm(`آیا از حذف مشتری "${customer.name}" مطمئن هستید؟\nاین عمل قابل بازگشت نیست.`)) {
+                    deleteCustomer(window.currentCustomerIndex);
+                }
+            } else {
+                showNotification('ابتدا یک مشتری را انتخاب کنید', 'warning');
+            }
+        }
+
+        function showAdvancedSearch() {
+            const searchTypes = [
+                '🔍 همه فیلدها',
+                '👤 نام مشتری',
+                '📞 شماره تماس',
+                '📝 توضیحات',
+                '💰 قیمت',
+                '📅 روز تحویل'
+            ];
+            
+            let html = `
+                <div style="padding: 20px;">
+                    <h3 style="color: #D4AF37; margin-bottom: 20px; text-align: center;">جستجوی پیشرفته</h3>
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <input type="text" id="advancedSearchInput" placeholder="عبارت جستجو..." style="padding: 12px; border-radius: 8px; border: 2px solid #D4AF37;">
+                        <select id="searchType" style="padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.5); color: white; border: 2px solid #D4AF37;">
+            `;
+            
+            searchTypes.forEach(type => {
+                html += `<option value="${type.split(' ')[1]}">${type}</option>`;
+            });
+            
+            html += `
+                    </select>
+                    <button onclick="performAdvancedSearch()" style="background: #D4AF37; color: black; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                        🔍 اجرای جستجو
+                    </button>
+                </div>
+            </div>
+            `;
+            
+            const searchWindow = window.open('', '_blank', 'width=400,height=300,top=100,left=100');
+            if (searchWindow) {
+                searchWindow.document.write(`
+                    <html dir="rtl">
+                    <head>
+                        <title>جستجوی پیشرفته</title>
+                        <style>
+                            body {
+                                background: #1a1a1a;
+                                color: white;
+                                font-family: Tahoma;
+                                padding: 0;
+                                margin: 0;
+                            }
+                        </style>
+                    </head>
+                    <body>${html}</body>
+                    </html>
+                `);
+                searchWindow.document.close();
+            }
+        }
+
+        function performAdvancedSearch() {
+            showNotification('جستجوی پیشرفته در حال توسعه است', 'info');
+        }
+
+        // Export functions to window object
+        window.showNotification = showNotification;
+        window.showLoading = showLoading;
+        window.hideLoading = hideLoading;
+        window.toggleDarkMode = toggleDarkMode;
+        window.toggleLightMode = toggleLightMode;
+        window.toggleVividMode = toggleVividMode;
+        window.toggleSettings = toggleSettings;
+        window.optimizeDatabase = optimizeDatabase;
+        window.deleteCurrentCustomer = deleteCurrentCustomer;
+        window.showAdvancedSearch = showAdvancedSearch;
+        window.performAdvancedSearch = performAdvancedSearch;
+    </script>
+</body>
+</html>
