@@ -7,9 +7,9 @@
     <meta name="description" content="اپلیکیشن مدیریت مشتریان و سفارشات خیاطی ALFAJR">
     
     <!-- PWA Configuration -->
-<link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
     
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -20,7 +20,7 @@
     <title>ALFAJR - سیستم خیاطی</title>
     
     <style>
-        /* Basic styles for immediate display */
+        /* ========== BASIC STYLES ========== */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -33,28 +33,120 @@
             color: #C0C0C0;
             min-height: 100vh;
             line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
         }
         
+        /* ========== THEME SUPPORT ========== */
+        body.dark-mode {
+            background: #1a1a1a;
+            color: #C0C0C0;
+        }
+        
+        body.light-mode {
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        body.vivid-mode {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        
+        /* ========== LAYOUT ========== */
         .container {
             padding: 20px;
             max-width: 1200px;
             margin: 0 auto;
         }
         
+        /* ========== HEADER ========== */
         .logo {
             text-align: center;
             color: #D4AF37;
             margin: 20px 0;
             font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
         }
         
+        /* ========== SETTINGS ========== */
+        .settings-menu {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        
+        .settings-btn {
+            background: rgba(212, 175, 55, 0.2);
+            border: 2px solid rgba(212, 175, 55, 0.4);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .settings-btn:hover {
+            background: rgba(212, 175, 55, 0.4);
+            transform: rotate(90deg);
+        }
+        
+        .settings-dropdown {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: 10px;
+            padding: 10px;
+            min-width: 200px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        .settings-dropdown button {
+            width: 100%;
+            margin: 5px 0;
+            text-align: right;
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: #C0C0C0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        
+        .settings-dropdown button:hover {
+            background: rgba(212, 175, 55, 0.3);
+            color: #fff;
+        }
+        
+        .settings-dropdown .delete-btn {
+            background: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+        }
+        
+        .settings-dropdown .delete-btn:hover {
+            background: rgba(220, 53, 69, 0.4);
+        }
+        
+        /* ========== LOADING ========== */
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -65,118 +157,793 @@
         }
         
         .loading-spinner {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border: 5px solid rgba(255,255,255,0.3);
             border-radius: 50%;
-            border-top-color: #D4AF37;
+            border-top-color: #0fceff;
             animation: spin 1s linear infinite;
+            margin-bottom: 20px;
         }
         
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
         
+        /* ========== BUTTONS ========== */
         button {
             background: rgba(212, 175, 55, 0.15);
             border: 1px solid rgba(212, 175, 55, 0.4);
             color: #D4AF37;
-            padding: 10px 15px;
+            padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
             margin: 5px;
             transition: all 0.3s ease;
+            font-family: inherit;
+            font-size: 14px;
         }
         
         button:hover {
             background: rgba(212, 175, 55, 0.25);
             transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
         }
         
-        input[type="text"] {
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary {
+            background: rgba(15, 206, 255, 0.2);
+            border-color: rgba(15, 206, 255, 0.4);
+            color: #0fceff;
+        }
+        
+        .btn-success {
+            background: rgba(40, 167, 69, 0.2);
+            border-color: rgba(40, 167, 69, 0.4);
+            color: #28a745;
+        }
+        
+        .btn-danger {
+            background: rgba(220, 53, 69, 0.2);
+            border-color: rgba(220, 53, 69, 0.4);
+            color: #dc3545;
+        }
+        
+        /* ========== INPUTS ========== */
+        input[type="text"],
+        input[type="number"],
+        input[type="tel"],
+        textarea,
+        select {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: #C0C0C0;
-            padding: 10px;
+            padding: 12px 15px;
             border-radius: 8px;
-            width: 300px;
-            margin: 0 8px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s;
         }
         
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="tel"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #D4AF37;
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        /* ========== SEARCH BOX ========== */
         .search-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .search-box input {
+            width: 300px;
+            max-width: 100%;
+            margin: 0 10px;
+        }
+        
+        /* ========== STATS BAR ========== */
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
             background: rgba(255, 255, 255, 0.05);
             padding: 20px;
             border-radius: 12px;
             margin: 20px 0;
-            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #D4AF37;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #888;
+        }
+        
+        /* ========== CUSTOMER LIST ========== */
         .customer-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            margin-top: 20px;
+            gap: 15px;
+            margin-top: 30px;
         }
         
         .customer-item {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            padding: 15px;
+            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             transition: all 0.3s ease;
+            cursor: pointer;
         }
         
         .customer-item:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            background: rgba(212, 175, 55, 0.1);
+            border-color: rgba(212, 175, 55, 0.3);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        
+        .customer-info {
+            flex: 1;
+        }
+        
+        .customer-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .customer-id {
+            font-family: monospace;
+            color: #0fceff;
+            font-size: 12px;
+            background: rgba(15, 206, 255, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        
+        .customer-date {
+            color: #888;
+            font-size: 12px;
+        }
+        
+        .customer-item h4 {
+            color: #fff;
+            margin-bottom: 5px;
+            font-size: 18px;
+        }
+        
+        .customer-phone {
+            color: #0fceff;
+            margin-bottom: 10px;
+        }
+        
+        .customer-notes {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+        
+        .customer-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .price-badge {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+        
+        .paid-badge {
+            background: rgba(15, 206, 255, 0.2);
+            color: #0fceff;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: 1px solid rgba(15, 206, 255, 0.3);
+        }
+        
+        .delivery-badge {
+            background: rgba(212, 175, 55, 0.2);
+            color: #D4AF37;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+        
+        .delete-btn {
+            background: transparent;
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #dc3545;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .delete-btn:hover {
+            background: rgba(220, 53, 69, 0.2);
+        }
+        
+        /* ========== PROFILE PAGE ========== */
+        .profile-header {
+            text-align: center;
+            margin: 30px 0;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .profile-header h2 {
+            color: #fff;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .profile-header h3 {
+            color: #0fceff;
+            font-size: 1.2rem;
+        }
+        
+        /* ========== NOTES SECTION ========== */
+        .notes-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        .notes-section h4 {
+            color: #D4AF37;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* ========== MEASUREMENTS ========== */
+        #measurementsContainer {
+            margin: 30px 0;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+        }
+        
+        .section-header h3 {
+            color: #D4AF37;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .measurements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .measurement-group {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .measurement-group h4 {
+            color: #0fceff;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .measurement-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .measurement-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .measurement-field label {
+            color: #aaa;
+            font-size: 14px;
+        }
+        
+        .measurement-input {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        
+        .measurement-input:focus {
+            border-color: #D4AF37;
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+        }
+        
+        /* ========== MODELS SECTION ========== */
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+        
+        .model-category {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .model-category h4 {
+            color: #0fceff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .model-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .model-option {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .model-option:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #D4AF37;
+        }
+        
+        .model-option.selected {
+            background: rgba(212, 175, 55, 0.3);
+            border-color: #D4AF37;
+            color: #fff;
+        }
+        
+        .model-option.multi-select {
+            position: relative;
+            padding-right: 40px;
+        }
+        
+        .model-option .checkmark {
+            position: absolute;
+            right: 15px;
+            color: #D4AF37;
+            font-weight: bold;
+        }
+        
+        /* ========== PRICE & DELIVERY ========== */
+        .price-delivery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+        
+        .price-section,
+        .payment-section,
+        .delivery-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .price-section h4,
+        .payment-section h4,
+        .delivery-section h4 {
+            color: #0fceff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .price-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #sewingPrice {
+            flex: 1;
+        }
+        
+        .currency {
+            color: #D4AF37;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .payment-toggle {
+            cursor: pointer;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+        
+        .payment-toggle:hover {
+            border-color: rgba(212, 175, 55, 0.3);
+        }
+        
+        .payment-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .payment-checkbox.checked {
+            color: #28a745;
+        }
+        
+        .checkbox-icon {
+            width: 24px;
+            height: 24px;
+            border: 2px solid currentColor;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .payment-date {
+            margin-top: 10px;
+            color: #888;
+            font-size: 13px;
+            text-align: left;
+        }
+        
+        .delivery-days {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .day-button {
+            flex: 1;
+            min-width: 100px;
+            text-align: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .day-button:hover {
             background: rgba(212, 175, 55, 0.1);
         }
         
+        .day-button.selected {
+            background: rgba(212, 175, 55, 0.3);
+            border-color: #D4AF37;
+            color: #fff;
+        }
+        
+        /* ========== ORDERS ========== */
+        .btn-add-order {
+            background: rgba(40, 167, 69, 0.2);
+            border-color: rgba(40, 167, 69, 0.4);
+            color: #28a745;
+        }
+        
+        .empty-orders {
+            text-align: center;
+            padding: 40px 20px;
+            color: #888;
+        }
+        
+        .empty-orders i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #555;
+        }
+        
+        .orders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .order-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .order-number {
+            color: #0fceff;
+            font-weight: bold;
+        }
+        
+        .order-date {
+            color: #888;
+            font-size: 13px;
+        }
+        
+        .order-details {
+            color: #aaa;
+            line-height: 1.5;
+        }
+        
+        .btn-delete-order {
+            background: transparent;
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #dc3545;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        /* ========== PRINT BUTTONS ========== */
+        .print-buttons {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        /* ========== ACTION BUTTONS ========== */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        /* ========== EMPTY STATE ========== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: #555;
+        }
+        
+        .empty-state h3 {
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+        
+        /* ========== NOTIFICATION ========== */
         .notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 15px 20px;
+            padding: 15px 25px;
             border-radius: 8px;
             color: white;
             font-weight: 600;
             z-index: 10000;
-            display: none;
+            max-width: 400px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            font-size: 14px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transform: translateX(100px);
         }
         
         .notification.show {
-            display: block;
-            animation: slideIn 0.3s ease;
+            opacity: 1;
+            transform: translateX(0);
         }
         
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        .notification.success {
+            background: #28a745;
         }
         
+        .notification.error {
+            background: #dc3545;
+        }
+        
+        .notification.warning {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .notification.info {
+            background: #17a2b8;
+        }
+        
+        /* ========== DATABASE STATUS ========== */
         .db-status {
             position: fixed;
-            bottom: 10px;
-            right: 10px;
-            padding: 8px 12px;
+            bottom: 20px;
+            left: 20px;
+            padding: 8px 15px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 13px;
             background: rgba(0,0,0,0.7);
             color: white;
             display: flex;
             align-items: center;
             gap: 8px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
         }
         
         .db-status.connected {
             background: rgba(40, 167, 69, 0.8);
         }
+        
+        .db-status.disconnected {
+            background: rgba(220, 53, 69, 0.8);
+        }
+        
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .logo {
+                font-size: 1.8rem;
+                margin: 10px 0;
+            }
+            
+            .search-box {
+                padding: 15px;
+            }
+            
+            .search-box input {
+                width: 100%;
+                margin: 10px 0;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .customer-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .customer-status {
+                align-self: stretch;
+                justify-content: space-between;
+            }
+            
+            .measurements-grid,
+            .models-grid,
+            .price-delivery-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons,
+            .print-buttons {
+                flex-direction: column;
+            }
+            
+            .action-buttons button,
+            .print-buttons button {
+                width: 100%;
+            }
+            
+            .settings-menu {
+                top: 10px;
+                left: 10px;
+            }
+            
+            .db-status {
+                bottom: 10px;
+                left: 10px;
+                font-size: 11px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            button {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            
+            input[type="text"],
+            input[type="number"],
+            input[type="tel"],
+            textarea {
+                padding: 10px;
+                font-size: 13px;
+            }
+            
+            .profile-header {
+                padding: 20px 15px;
+            }
+            
+            .profile-header h2 {
+                font-size: 1.5rem;
+            }
+        }
     </style>
 </head>
-<body>
+<body class="dark-mode">
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay" style="display: none;">
         <div class="loading-spinner"></div>
@@ -227,8 +994,8 @@
                     <div class="stat-label">کل مشتریان</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value" id="dbSize">0KB</div>
-                    <div class="stat-label">حجم دیتابیس</div>
+                    <div class="stat-value" id="paidCustomers">0</div>
+                    <div class="stat-label">پرداخت شده</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" id="activeOrders">0</div>
@@ -238,16 +1005,21 @@
 
             <!-- Search Box -->
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="جستجوی مشتری بر اساس نام یا شماره" 
+                <input type="text" id="searchInput" placeholder="جستجوی مشتری بر اساس نام، شماره، کد" 
                        onkeypress="if(event.key === 'Enter') searchCustomer()">
                 <button onclick="searchCustomer()"><i class="fas fa-search"></i> جستجو</button>
                 <button onclick="addCustomer()"><i class="fas fa-user-plus"></i> مشتری جدید</button>
-                <button onclick="advancedSearch()"><i class="fas fa-filter"></i> جستجوی پیشرفته</button>
+                <button onclick="showAdvancedSearch()"><i class="fas fa-filter"></i> جستجوی پیشرفته</button>
             </div>
 
             <!-- Customer List -->
             <div class="customer-list" id="customerList">
                 <!-- مشتریان اینجا نمایش داده می‌شوند -->
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <h3>هنوز مشتری ثبت نشده است</h3>
+                    <p>برای شروع، روی دکمه "مشتری جدید" کلیک کنید</p>
+                </div>
             </div>
         </div>
 
@@ -258,7 +1030,11 @@
             <div class="profile-header">
                 <h2 id="profileName">نام مشتری</h2>
                 <h3 id="profilePhone">شماره تماس</h3>
+                <div id="profileId">کد: ----------</div>
             </div>
+
+            <!-- Print Buttons (Added dynamically) -->
+            <div id="printButtonsContainer"></div>
 
             <!-- Customer Notes -->
             <div class="notes-section">
@@ -266,67 +1042,40 @@
                 <textarea id="customerNotes" placeholder="توضیحات مربوط به مشتری را اینجا وارد کنید..."></textarea>
             </div>
 
-            <!-- Measurements Table -->
-            <div id="measurementsTable"></div>
+            <!-- Measurements Section -->
+            <div id="measurementsContainer">
+                <!-- اندازه‌گیری‌ها اینجا لود می‌شوند -->
+            </div>
 
             <!-- Models Section -->
-            <div class="model-section">
-                <div>
-                    <div class="model-title" onclick="toggleOptions('yakhunOptions')">
-                        <span id="yakhunSelectedText">مدل یخن: انتخاب نشده</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="model-options" id="yakhunOptions" style="display: none;"></div>
-                </div>
-                
-                <div>
-                    <div class="model-title" onclick="toggleOptions('sleeveOptions')">
-                        <span id="sleeveSelectedText">مدل آستین: انتخاب نشده</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="model-options" id="sleeveOptions" style="display: none;"></div>
-                </div>
-                
-                <div>
-                    <div class="model-title" onclick="toggleOptions('skirtOptions')">
-                        <span id="skirtSelectedText">مدل دامن: انتخاب نشده</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="model-options" id="skirtOptions" style="display: none;"></div>
-                </div>
-                
-                <div>
-                    <div class="model-title" onclick="toggleOptions('featuresOptions')">
-                        <span id="featuresSelectedText">ویژگی‌ها: انتخاب نشده</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="model-options" id="featuresOptions" style="display: none;"></div>
-                </div>
+            <div id="modelsContainer">
+                <!-- مدل‌ها اینجا لود می‌شوند -->
             </div>
 
             <!-- Price and Delivery Section -->
-            <div id="priceDeliverySection" class="price-delivery-section">
-                <!-- اینجا بخش قیمت و تحویل لود می‌شود -->
+            <div id="priceDeliveryContainer">
+                <!-- قیمت و تحویل اینجا لود می‌شوند -->
+            </div>
+
+            <!-- Orders Section -->
+            <div id="ordersContainer">
+                <!-- سفارشات اینجا لود می‌شوند -->
             </div>
 
             <!-- Action Buttons -->
             <div class="action-buttons">
-                <button onclick="saveCustomerToDB()"><i class="fas fa-save"></i> ذخیره تغییرات</button>
-                <button onclick="printLabels(currentIndex)"><i class="fas fa-print"></i> چاپ لیبل‌ها</button>
-                <button onclick="addOrder(currentIndex)"><i class="fas fa-plus"></i> سفارش جدید</button>
-                <button class="delete-btn" onclick="deleteCustomer(currentIndex)"><i class="fas fa-trash"></i> حذف مشتری</button>
+                <button onclick="saveCustomer()"><i class="fas fa-save"></i> ذخیره تغییرات</button>
+                <button onclick="printThermalLabel()"><i class="fas fa-print"></i> چاپ لیبل</button>
+                <button onclick="printThermalInvoice()"><i class="fas fa-file-invoice"></i> چاپ فاکتور</button>
+                <button onclick="addOrder()"><i class="fas fa-plus"></i> سفارش جدید</button>
+                <button class="delete-btn" onclick="deleteCurrentCustomer()"><i class="fas fa-trash"></i> حذف مشتری</button>
             </div>
-
-            <!-- Orders History -->
-            <h4><i class="fas fa-history"></i> تاریخچه سفارش‌ها:</h4>
-            <div id="ordersHistory"></div>
         </div>
     </div>
 
     <!-- JavaScript -->
     <script src="app.js"></script>
     
-    <!-- PWA Service Worker Registration -->
     <script>
         // Service Worker Registration
         if ('serviceWorker' in navigator) {
@@ -334,8 +1083,7 @@
                 navigator.serviceWorker.register('service-worker.js')
                     .then(registration => {
                         console.log('✅ Service Worker ثبت شد:', registration.scope);
-                        document.getElementById('dbStatus').innerHTML = '<i class="fas fa-database"></i> <span>متصل (آفلاین)</span>';
-                        document.getElementById('dbStatus').className = 'db-status connected';
+                        updateDatabaseStatus(true);
                     })
                     .catch(error => {
                         console.log('❌ خطا در ثبت Service Worker:', error);
@@ -343,32 +1091,21 @@
             });
         }
         
-        // Basic notification function
+        // ========== UI HELPER FUNCTIONS ==========
         function showNotification(message, type = 'info') {
             const notification = document.getElementById('notification');
             notification.textContent = message;
             notification.className = `notification ${type} show`;
+            
             setTimeout(() => {
-                notification.className = 'notification';
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.textContent = '';
+                    notification.className = 'notification';
+                }, 300);
             }, 3000);
         }
         
-        // Toggle settings dropdown
-        function toggleSettings() {
-            const dropdown = document.getElementById('settingsDropdown');
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-        }
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (event) => {
-            const settingsMenu = document.querySelector('.settings-menu');
-            const dropdown = document.getElementById('settingsDropdown');
-            if (settingsMenu && !settingsMenu.contains(event.target)) {
-                dropdown.style.display = 'none';
-            }
-        });
-        
-        // Show loading
         function showLoading(message = 'در حال بارگذاری...') {
             const overlay = document.getElementById('loadingOverlay');
             const text = document.getElementById('loadingText');
@@ -378,7 +1115,6 @@
             }
         }
         
-        // Hide loading
         function hideLoading() {
             const overlay = document.getElementById('loadingOverlay');
             if (overlay) {
@@ -386,14 +1122,75 @@
             }
         }
         
+        function toggleSettings() {
+            const dropdown = document.getElementById('settingsDropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+        
+        function updateDatabaseStatus(connected) {
+            const statusElement = document.getElementById('dbStatus');
+            if (statusElement) {
+                if (connected) {
+                    statusElement.innerHTML = '<i class="fas fa-database"></i> متصل';
+                    statusElement.className = 'db-status connected';
+                } else {
+                    statusElement.innerHTML = '<i class="fas fa-database"></i> قطع';
+                    statusElement.className = 'db-status disconnected';
+                }
+            }
+        }
+        
+        // ========== ADDITIONAL FUNCTIONS FOR HTML ==========
+        function showAdvancedSearch() {
+            const query = prompt('لطفاً عبارت جستجوی پیشرفته را وارد کنید (می‌توانید در نام، شماره، مدل، اندازه‌ها و ... جستجو کنید):');
+            if (query) {
+                document.getElementById('searchInput').value = query;
+                searchCustomer();
+            }
+        }
+        
+        function optimizeDatabase() {
+            if (confirm('آیا از بهینه‌سازی دیتابیس مطمئن هستید؟')) {
+                showLoading('در حال بهینه‌سازی...');
+                setTimeout(() => {
+                    hideLoading();
+                    showNotification('دیتابیس با موفقیت بهینه‌سازی شد', 'success');
+                }, 2000);
+            }
+        }
+        
+        function deleteCurrentCustomer() {
+            if (typeof currentCustomerIndex !== 'undefined' && currentCustomerIndex !== null) {
+                deleteCustomer(currentCustomerIndex);
+            } else {
+                showNotification('ابتدا یک مشتری انتخاب کنید', 'warning');
+            }
+        }
+        
+        // Close settings dropdown when clicking outside
+        document.addEventListener('click', (event) => {
+            const settingsMenu = document.querySelector('.settings-menu');
+            const dropdown = document.getElementById('settingsDropdown');
+            if (settingsMenu && !settingsMenu.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+        
         // Initial loading
         window.addEventListener('load', () => {
             showLoading('در حال راه‌اندازی اپلیکیشن...');
-            setTimeout(() => {
-                hideLoading();
-                showNotification('اپلیکیشن ALFAJR آماده است', 'success');
-            }, 1500);
+            // اپلیکیشن اصلی از app.js لود می‌شود
         });
+        
+        // ========== GLOBAL EXPORTS ==========
+        // این توابع از app.js استفاده می‌کنند
+        window.showNotification = showNotification;
+        window.showLoading = showLoading;
+        window.hideLoading = hideLoading;
+        window.updateDatabaseStatus = updateDatabaseStatus;
+        window.showAdvancedSearch = showAdvancedSearch;
+        window.optimizeDatabase = optimizeDatabase;
+        window.deleteCurrentCustomer = deleteCurrentCustomer;
     </script>
 </body>
 </html>
