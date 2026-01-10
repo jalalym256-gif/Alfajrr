@@ -1912,3 +1912,6 @@ window.toggleLightMode = toggleLightMode;
 window.toggleVividMode = toggleVividMode;
 window.clearAllData = clearAllData;
 window.printThermalLabel = printThermalLabel;
+console.log("App checking...");
+if (dbManager) console.log("Database Manager is ready");
+if (typeof initializeApp === 'function') console.log("Init function exists");
